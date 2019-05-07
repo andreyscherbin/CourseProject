@@ -1,0 +1,17 @@
+ Том в устройстве C не имеет метки.
+ Серийный номер тома: 8058-E5B9
+
+ Содержимое папки C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\ftpserver
+
+07.05.2019  07:23    <DIR>          .
+07.05.2019  07:23    <DIR>          ..
+07.05.2019  16:53    <DIR>          Debug
+07.05.2019  16:53            11 391 ftpserver.cpp
+22.04.2019  17:58             3 925 ftpserver.vcxproj
+22.04.2019  17:41             1 046 ftpserver.vcxproj.filters
+22.04.2019  17:41               143 ftpserver.vcxproj.user
+07.05.2019  07:00    <DIR>          haha
+07.05.2019  16:53                 0 list.txt
+07.05.2019  07:22                 0 listing.txt
+               6 файлов         16 505 байт
+               4 папок  85 167 255 552 байт свободно

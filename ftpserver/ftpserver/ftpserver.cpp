@@ -8,6 +8,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <conio.h>
+#include <direct.h>
+#include <string>
+#include <iostream>
+using namespace std;
+ 
 
 // Need to link with Ws2_32.lib
 #pragma comment (lib, "Ws2_32.lib")
@@ -36,19 +41,27 @@ int __cdecl main(void)
 	char sendvbuf[DEFAULT_BUFLEN];
     int recvbuflen = DEFAULT_BUFLEN;
 	int sendvbuflen = DEFAULT_BUFLEN;
+	const int MAX_SIZE_STRING = 50;
+	const int BUFFER_SIZE = 1024;
+
+
 	char command[5];
 
+	char workingDirectory[MAX_SIZE_STRING] = "C:/ftpServerBase ";
+	
 	char file1[50] = "-r andrey andrey 0 56 01 02   2019 file.txt";
+
+	
 	char file2[50] = "dr andrey andrey 0 00 05 05   2018 coursework";
 
 	char responseHELLO[DEFAULT_BUFLEN] = "220 Andrey Scherbin FTP-Server";
 	char responseUSER[DEFAULT_BUFLEN] = "331 Anonymous login ok, send your complete email address as your password ";
 	char responsePASS[DEFAULT_BUFLEN] = "230 Logged in anonymously";	
-    char responsePWD[DEFAULT_BUFLEN] =  "257  \" /folder \" is current directory ";
+    char responsePWD[DEFAULT_BUFLEN] =  "";
 	char responseSYST[DEFAULT_BUFLEN] = "215 WIN";
 	char responseFEAT[DEFAULT_BUFLEN] = "211 Extensions supported";
 	char responseTYPE[DEFAULT_BUFLEN] = "200 Switching to Binary mode";
-	char responsePASV[DEFAULT_BUFLEN] = "227 Entering Passive Mode (172,20,10,5,0,20).";
+	char responsePASV[DEFAULT_BUFLEN] = "227 Entering Passive Mode (127,0,0,1,0,20).";
 	char responsePORT[DEFAULT_BUFLEN] = "200 Entering Active Mode .";
 	char responseLIST1[DEFAULT_BUFLEN] = "150 Here comes the directory listing."; 
 	char responseLIST2[DEFAULT_BUFLEN] = "226 The directory listing send OK.";   
@@ -67,6 +80,14 @@ int __cdecl main(void)
 	char responseRNTO[DEFAULT_BUFLEN] =  "350 Rename file success.";
 
     
+	for(int i = 0 ;i< strlen(workingDirectory);i++)
+	{
+		printf("%c",workingDirectory[i]);
+		
+	}
+
+	chdir("C:/ftpServerBase");   // база сервера.
+
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != 0) {
@@ -149,7 +170,15 @@ int __cdecl main(void)
 	}
 		if(!strcmp(command, "PWD"))
 	{
-	  printf("PWD command response\n");	  
+	   printf("PWD command response\n");
+	   responsePWD[0] = 0;
+	   string a  = "257 ";
+	   a  = a + "\"" + workingDirectory + "\"" + " is current directory";
+	   printf("a = %s\n",a.c_str());
+	  
+	   strcat(responsePWD,a.c_str());
+	   printf("response =  %s\n",responsePWD);
+
 	   iSendResult = send( ClientSocket,responsePWD,sizeof(responsePWD),0 );
 	}
 		if(!strcmp(command, "SYST"))
@@ -180,8 +209,20 @@ int __cdecl main(void)
 	}
 	 if(!strcmp(command, "CWD"))
 	{
-	  printf("CWD command response\n");	
-	   iSendResult = send( ClientSocket,responseCWD,sizeof(responseCWD),0 );
+	  char wayToCWD[MAX_SIZE_STRING];
+	  printf("CWD command response\n");
+	  printf("%s\n",recvbuf + 3);
+	  sscanf(recvbuf + 3 , "%s",wayToCWD);
+	  printf("wayToCWD = %s\n",wayToCWD);  
+
+      printf("dir = %s\n",getcwd(NULL,MAX_SIZE_STRING));	 
+	  if((chdir(wayToCWD)))
+		  printf("error chdir\n");	  
+	  printf("dir = %s\n",getcwd(NULL,MAX_SIZE_STRING));
+
+	  workingDirectory[0] = 0;
+	  strcat(workingDirectory,getcwd(NULL,MAX_SIZE_STRING));
+	  iSendResult = send( ClientSocket,responseCWD,sizeof(responseCWD),0 );
 	}
 	 if(!strcmp(command, "MKD"))
 	{
@@ -295,27 +336,32 @@ int __cdecl main(void)
 	}
 			if(!strcmp(command, "LIST"))
     {
-	  printf("LIST command response\n"); 	 
-	  iResult = send( ClientSocket,responseLIST1,sizeof(responseLIST1),0 );	  
-	  iResult = send(DataSocket1,file1,sizeof(file1),0 );
-	  iResult = send(DataSocket1,file2,sizeof(file2),0 );
+
+
+	  printf("LIST command response\n"); 
+
+	  system("dir > list.txt");
+	  int i = 0;
+	  char buf[1024];
+          FILE*f = fopen("list.txt","r");
+          while(!feof(f))
+            buf[i++] = fgetc(f);
+          buf[i-1] = '\0';
+	  fclose(f);
+      printf("%s",buf);
+	  iResult = send( ClientSocket,responseLIST1,sizeof(responseLIST1),0 );	
+	  iResult = send(DataSocket1, buf,1024, 0);
+	 // iResult = send(DataSocket1,file1,sizeof(file1),0 );
+	 // iResult = send(DataSocket1,file2,sizeof(file2),0 );
 	  iResult = send( ClientSocket,responseLIST2,sizeof(responseLIST2),0 );
+	  
 	  shutdown(DataSocket1,SD_SEND);
 	  closesocket(DataSocket);
 	  closesocket(DataSocket1);
 	}
-
-
     } while (iResult > 0);
 
 
-
-   
-		
-
-	
-  
-    
 
     // shutdown the connection since we're done
     iResult = shutdown(ClientSocket, SD_SEND);
@@ -332,6 +378,5 @@ int __cdecl main(void)
 	printf("Server ended\n");
 	getch();
     WSACleanup();
-
     return 0;
 }
