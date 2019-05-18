@@ -1,43 +1,47 @@
-﻿Сборка начата 07.05.2019 21:02:21.
-     1>Проект "C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\ftpserver\ftpserver.vcxproj" в узле 2 (целевые объекты build).
+﻿Построение начато 18.05.2019 4:47:10.
+     1>Проект "C:\Users\VALERA\Documents\Visual Studio 2010\Projects\CourseProject\ftpserver\ftpserver\ftpserver.vcxproj" в узле 2 (целевые объекты build).
      1>InitializeBuildStatus:
          Создание "Debug\ftpserver.unsuccessfulbuild", так как было задано "AlwaysCreate".
        ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ftpserver.cpp
          ftpserver.cpp
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(83): warning C4018: <: несоответствие типов со знаком и без знака
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(89): warning C4996: 'chdir': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _chdir. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(123): см. объявление "chdir"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(157): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(101): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(325): см. объявление "sscanf"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(179): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(110): см. объявление "strcat"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(215): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(325): см. объявление "sscanf"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(218): warning C4996: 'getcwd': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _getcwd. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(117): см. объявление "getcwd"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(219): warning C4996: 'chdir': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _chdir. See online help for details.
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(125): warning C4996: 'chdir': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _chdir. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(123): см. объявление "chdir"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(221): warning C4996: 'getcwd': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _getcwd. See online help for details.
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(130): warning C4996: 'getcwd': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _getcwd. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(117): см. объявление "getcwd"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(224): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(149): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(110): см. объявление "strcat"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(346): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(202): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(325): см. объявление "sscanf"
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(205): warning C4996: 'chdir': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _chdir. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(123): см. объявление "chdir"
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(209): warning C4996: 'getcwd': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _getcwd. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(117): см. объявление "getcwd"
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(211): warning C4996: 'getcwd': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _getcwd. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(117): см. объявление "getcwd"
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(226): warning C4996: 'mkdir': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _mkdir. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(124): см. объявление "mkdir"
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(422): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(234): см. объявление "fopen"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(379): warning C4996: 'getch': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _getch. See online help for details.
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(446): warning C4018: <: несоответствие типов со знаком и без знака
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(452): warning C4996: 'chdir': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _chdir. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\direct.h(123): см. объявление "chdir"
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(537): warning C4996: 'getch': The POSIX name for this item is deprecated. Instead, use the ISO C++ conformant name: _getch. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\conio.h(128): см. объявление "getch"
-     1>c:\users\марина\documents\visual studio 2010\projects\ftpserver\ftpserver\ftpserver.cpp(41): warning C4101: sendvbuf: неиспользованная локальная переменная
+     1>c:\users\valera\documents\visual studio 2010\projects\courseproject\ftpserver\ftpserver\ftpserver.cpp(441): warning C4715: ThreadFunc: значение возвращается не при всех путях выполнения
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\Debug\ftpserver.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\ftpserver.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\Debug\ftpserver.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\Debug\ftpserver.lib" /MACHINE:X86 Debug\ftpserver.obj
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\VALERA\Documents\Visual Studio 2010\Projects\CourseProject\ftpserver\Debug\ftpserver.exe" /INCREMENTAL:NO /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\ftpserver.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\VALERA\Documents\Visual Studio 2010\Projects\CourseProject\ftpserver\Debug\ftpserver.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\VALERA\Documents\Visual Studio 2010\Projects\CourseProject\ftpserver\Debug\ftpserver.lib" /MACHINE:X86 Debug\ftpserver.obj
      1>ftpserver.obj : warning LNK4075: не учитывается "/EDITANDCONTINUE" из-за спецификации "/INCREMENTAL:NO"
-         ftpserver.vcxproj -> C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\Debug\ftpserver.exe
+         ftpserver.vcxproj -> C:\Users\VALERA\Documents\Visual Studio 2010\Projects\CourseProject\ftpserver\Debug\ftpserver.exe
        Manifest:
-         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\Debug\ftpserver.exe;#1" /manifest Debug\ftpserver.exe.intermediate.manifest
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\VALERA\Documents\Visual Studio 2010\Projects\CourseProject\ftpserver\Debug\ftpserver.exe;#1" /manifest Debug\ftpserver.exe.intermediate.manifest
        FinalizeBuildStatus:
          Файл "Debug\ftpserver.unsuccessfulbuild" удаляется.
          Обращение к "Debug\ftpserver.lastbuildstate".
-     1>Построение проекта "C:\Users\Марина\documents\visual studio 2010\Projects\ftpserver\ftpserver\ftpserver.vcxproj" завершено (целевые объекты build).
+     1>Построение проекта "C:\Users\VALERA\Documents\Visual Studio 2010\Projects\CourseProject\ftpserver\ftpserver\ftpserver.vcxproj" завершено (целевые объекты build).
 
 Построение успешно завершено.
 
-Затраченное время: 00:00:04.37
+Затраченное время: 00:00:01.56
