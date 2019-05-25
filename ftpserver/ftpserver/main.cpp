@@ -1,52 +1,55 @@
 
+
 #undef UNICODE
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <Windows.h>
 #include <winsock2.h>
-#include <ws2tcpip.h>
-#include <stdlib.h>
+#include <ws2tcpip.h>    
 #include <stdio.h>
 #include <conio.h>
 #include <direct.h>
 #include <string>
 #include <iostream>
-#include <fstream>
-#include <windows.h>
-#pragma comment (lib, "Ws2_32.lib")
-using namespace std;
+#include <fstream>     
+#include <stdlib.h>    
+   
+using namespace std;   
+#pragma comment (lib, "Ws2_32.lib")  
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_COMMAND_PORT "21"
 #define DEFAULT_DATA_PORT "20"
 #define MAXLINE 4096
+#define MAX_SIZE_STRING 200
+DWORD WINAPI  ThreadFunc(LPVOID pParam);
+SOCKET ClientSocket = INVALID_SOCKET;
+DWORD threadID;
+HANDLE thread;
+SOCKET ListenSocket; 
+WSADATA wsaData;
+const int BUFFER_SIZE = 1024;   
+struct addrinfo *result = NULL;
+struct addrinfo hints;
+int iSendResult;
+int iResult;
+int iRecv;   	
+HANDLE mutexPASV = CreateMutex(NULL,FALSE,"mutex PASV");	
+int global = 1;
+int bytes = 0;
 
-int iResult;  
-    SOCKET ClientSocket = INVALID_SOCKET;
-	SOCKET DataSocket = INVALID_SOCKET;
-	SOCKET DataSocket1 = INVALID_SOCKET;
-	DWORD threadID;
-	HANDLE thread;
-	SOCKET ListenSocket; 
+	
 
-	 WSADATA wsaData;
-    const int MAX_SIZE_STRING = 50;
-	const int BUFFER_SIZE = 1024;
-    char command[5];
-    struct addrinfo *result = NULL;
-    struct addrinfo hints;
-    int iSendResult;
-    char recvbuf[DEFAULT_BUFLEN];
-	char sendvbuf[DEFAULT_BUFLEN];
-    int recvbuflen = DEFAULT_BUFLEN;
-	int sendvbuflen = DEFAULT_BUFLEN;
-	char workingDirectory[MAX_SIZE_STRING] = "C:/ftpServerBase";	
+DWORD WINAPI  ThreadFunc(LPVOID ClientSocket)   // œŒ“Œ -ÕŒ¬Œ…  À»≈Õ“ ( “Œ“ ∆≈ —¿Ã€…)
+   {
+
+	   ReleaseMutex(mutexPASV);
+	char workingDirectory[MAX_SIZE_STRING] = "D:/usb";  	
 	char oldfilename[MAX_SIZE_STRING] = "oldfilename.txt";                   // ÒÚ‡ÓÂ ËÏˇ Ù‡ÈÎ‡
     char newfilename[MAX_SIZE_STRING] = "newfilename.txt";                   // ÌÓ‚ÓÂ ËÏˇ Ù‡ÈÎ‡
 	char deletefilename[MAX_SIZE_STRING]="deletefilename";
 	char newdirectoryname[MAX_SIZE_STRING]="newdirectoryname";
 	char createnewfilename[MAX_SIZE_STRING]="createnewfilename";
-	char downloadfilename[MAX_SIZE_STRING]="downloadfilename";
-	
+	char downloadfilename[DEFAULT_BUFLEN]="downloadfilename";
 	char responseHELLO[DEFAULT_BUFLEN] = "220 Andrey Scherbin FTP-Server";
 	char responseOK[DEFAULT_BUFLEN]="220 OK";
 	char responseUSER[DEFAULT_BUFLEN] = "331 Anonymous login ok, send your complete email address as your password ";
@@ -55,13 +58,14 @@ int iResult;
 	char responseSYST[DEFAULT_BUFLEN] = "215 WIN";
 	char responseFEAT[DEFAULT_BUFLEN] = "211 Extensions supported";
 	char responseTYPE[DEFAULT_BUFLEN] = "200 Switching to Binary mode";
-	char responsePASV[DEFAULT_BUFLEN] = "227 Entering Passive Mode (172,20,10,4,0,20).";
+	char responsePASV[DEFAULT_BUFLEN] = "227 Entering Passive Mode (172,20,10,5,0,20).";
 	char responsePORT[DEFAULT_BUFLEN] = "200 Entering Active Mode .";
 	char responseLIST1[DEFAULT_BUFLEN] = "150 Here comes the directory listing."; 
 	char responseLIST2[DEFAULT_BUFLEN] = "226 The directory listing send OK.";   
 	char responseDELE[DEFAULT_BUFLEN] =  "250 file delete successfully.";    
 	char responseRMD[DEFAULT_BUFLEN] =  "250 directory delete successfully.";
 	char responseCWD[DEFAULT_BUFLEN] =  "250 go to directory success.";
+	char responseCWDerror[DEFAULT_BUFLEN] =  "550 No such file or directory..";
 	char responseMKD[DEFAULT_BUFLEN] =  "257 create directory successfully.";
 	char responseQUIT[DEFAULT_BUFLEN] =  "221 quit successfully.";
 	char responseRETR1[DEFAULT_BUFLEN] = "150 Starting download file."; 
@@ -73,246 +77,252 @@ int iResult;
 	char responseRNFR[DEFAULT_BUFLEN] =  "350 Chose file to rename success.";
 	char responseRNTO[DEFAULT_BUFLEN] =  "350 Rename file success.";
 	char responseCDUP[DEFAULT_BUFLEN] =  "250 CDUP command successful";
-
-
-DWORD WINAPI  ThreadFunc(LPVOID pParam)   // œŒ“Œ -ÕŒ¬Œ…  À»≈Õ“ ( “Œ“ ∆≈ —¿Ã€…)
-   {
-
-	   printf("Accept client succesfull\n");                                         // œË„Î‡¯ÂÌËÂ ÍÎËÂÌÚÛ
-	 iSendResult = send( ClientSocket,responseHELLO,sizeof(responseHELLO),0 );
+	char responseREST[DEFAULT_BUFLEN] =  "350 Restarting";
 	
-		do {			
-			printf("do command = %s\n",command);
-			iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-			
-		    sscanf(recvbuf, "%s", command);
-			printf("command = %s\n",command);
-		
+
+
+	   char command[5];
+	   char recvbuf[DEFAULT_BUFLEN];
+	   char sendvbuf[DEFAULT_BUFLEN];
+       int recvbuflen = DEFAULT_BUFLEN;
+	   int sendvbuflen = DEFAULT_BUFLEN;
+	   SOCKET DataPasvSocket = INVALID_SOCKET;
+       SOCKET ListenDataPasvSocket = INVALID_SOCKET;
+	   SOCKET DataPortSocket = INVALID_SOCKET;
+	   SOCKET clientsocket = (SOCKET)ClientSocket;
+	 
+	   int index = global;
+	   global++;      
+	   printf("Accept client succesfull %d socket = %d \n",index,clientsocket);                                         // œË„Î‡¯ÂÌËÂ ÍÎËÂÌÚÛ
+	   send(clientsocket,responseHELLO,sizeof(responseHELLO),0 );
+	
+		do {
+			printf("THREAD NUMBER %d\n",index);
+			iRecv = recv(clientsocket,recvbuf, recvbuflen, 0);		  
+		    sscanf(recvbuf, "%s", command);	
+			string msg = "";
+	        for(int x = 0; x < iRecv; x++)
+	         {
+	          msg.push_back(recvbuf[x]);
+	          }	
+
 		if(!strcmp(command, "USER"))
 	{
-	  printf("USER command response\n");
-	  iSendResult = send( ClientSocket,responseUSER,sizeof(responseUSER),0 );	 
+	  printf("USER %d\n",index);
+	  send(clientsocket,responseUSER,sizeof(responseUSER),0 );	 
+	}
+      if(!strcmp(command, "REST"))
+	{
+	  printf("REST %d\n",index);
+	  send(clientsocket,responseREST,sizeof(responseREST),0 );	 
 	}
 
      if(!strcmp(command, "CDUP"))
 	 {
-		 printf("CDUP command response\n");
+		 printf("CDUP\n");
 		 int i;
 		 char symbol;
 		 for(i=strlen(workingDirectory);i>=0;i--)
 		 {
            symbol=workingDirectory[i];
 		   if(symbol==92 || workingDirectory[i-1] == ':')  // asci code '\'
-		   { 
-			 printf("YES FINDING  \n");
+		   {			 
 			 break;
 		   }
 		 }
      if(symbol != ':' && workingDirectory[i-1] != ':' )
 	 {
-	 memset(workingDirectory+i,'\0',strlen(workingDirectory));
-	 printf("else1\n");
+	 memset(workingDirectory+i,'\0',strlen(workingDirectory));	 
 	 }
 	 if(workingDirectory[i-1] == ':')
 	 {
       memset(workingDirectory+i,'\0',strlen(workingDirectory));
-	  strcat(workingDirectory,"\\");
-	  printf("else2\n");
+	  strcat(workingDirectory,"\\");	
 	 }
-
 
 	  if((chdir(workingDirectory)))
 	  {
 		  printf("error CDUP chdir\n");	
-	  }
-	  printf("XXX = %s\n",workingDirectory);
-	  printf("dir = %s\n",getcwd(NULL,MAX_SIZE_STRING));
-	  
-	  iSendResult = send( ClientSocket,responseCDUP,sizeof(responseUSER),0 );
-
+	  }	  
+	  send(clientsocket,responseCDUP,sizeof(responseUSER),0 );
 	 }
-
 		if(!strcmp(command, "PASS"))
 	{
-	  printf("PASS command response\n");	  
-	  iSendResult = send( ClientSocket,responsePASS,sizeof(responsePASS),0 );
+	  printf("PASS %d\n",index);	  
+	  send(clientsocket,responsePASS,sizeof(responsePASS),0 );
 	}
 		if(!strcmp(command, "PWD"))
 	{
-	   printf("PWD command response\n");
+	   printf("PWD %d\n",index);
 	   responsePWD[0] = 0;
 	   string a  = "257 ";
-	   a  = a + "\"" + workingDirectory + "\"" + " is current directory";
-	   printf("a = %s\n",a.c_str());
-	  
+	   a  = a + "\"" + workingDirectory + "\"" + " is current directory";	  
 	   strcat(responsePWD,a.c_str());
-	   printf("response =  %s\n",responsePWD);
-
-	   iSendResult = send( ClientSocket,responsePWD,strlen(responsePWD)+1,0 );
+	   send(clientsocket,responsePWD,strlen(responsePWD)+1,0 );
+	   printf("PWD WORKING DIRECTORY = %s %d\n",workingDirectory,index);
 	}
 		if(!strcmp(command, "SYST"))
 	{
-	  printf("SYST command response\n");	  
-	   iSendResult = send( ClientSocket,responseSYST,sizeof(responseSYST),0 );
+	  printf("SYST\n");	  
+	   send(clientsocket,responseSYST,sizeof(responseSYST),0 );
 	}	
 
 		if(!strcmp(command, "FEAT"))
 	{
-	  printf("FEAT command response\n");	  
-	   iSendResult = send( ClientSocket,responseFEAT,sizeof(responseFEAT),0 );
+	  printf("FEAT\n");	  
+	  send(clientsocket,responseFEAT,sizeof(responseFEAT),0 );
 	}	
 		if(!strcmp(command, "TYPE"))
 	{
-	  printf("TYPE command response\n");	  
-	   iSendResult = send( ClientSocket,responseTYPE,sizeof(responseTYPE),0 );
+	  printf("TYPE %d\n",index);	  
+	   send(clientsocket,responseTYPE,sizeof(responseTYPE),0 );
 	}
 		if(!strcmp(command, "DELE"))
 	{
-	  printf("DELE command response\n");
+	  printf("DELE\n");
 	  memset(deletefilename, '\0',MAX_SIZE_STRING);
 	  memcpy(deletefilename,recvbuf+5,MAX_SIZE_STRING);
 	  int i;
 	  for(i=0;deletefilename[i]!='\n';i++)
 	  {}
-	  deletefilename[i-1]='\0';
-		  
-	  printf("DELETEFILENAME = %s\n",deletefilename);
+	  deletefilename[i-1]='\0';	 
 	  if(remove(deletefilename))
 	  {
      perror("delete file error:");
-	  }
-	  else
-	  {
-	  printf("file delete succes\n");
-	  }
-     
-	   iSendResult = send( ClientSocket,responseDELE,sizeof(responseDELE),0 );
+	  }     
+	   send(clientsocket,responseDELE,sizeof(responseDELE),0 );
 	}
      if(!strcmp(command, "RMD"))
 	{
-	  printf("RMD command response\n");	
-	   iSendResult = send( ClientSocket,responseRMD,sizeof(responseRMD),0 );
+	  printf("RMD\n");	
+	   send(clientsocket,responseRMD,sizeof(responseRMD),0 );
 	}
 	 if(!strcmp(command, "CWD"))
-	{
+	{ 
+	  int i = 0;
 	  char wayToCWD[MAX_SIZE_STRING];
-	  printf("CWD command response\n");
-	  
-	  sscanf(recvbuf + 3 , "%s",wayToCWD);
-	  printf("wayToCWD = %s\n",wayToCWD); 
-      printf("dir = %s\n",workingDirectory);	  
-	  if((chdir(wayToCWD)))
+	  char wayToCWD0[MAX_SIZE_STRING];
+	  printf("CWD %d\n",index);	
+
+	  for(i = 0;recvbuf[4+i]!='\n';i++)
 	  {
-		  printf("error CWD chdir\n");
+		  wayToCWD[i] = recvbuf[4+i];		  
 	  }
-	  printf("dir = %s\n",getcwd(NULL,MAX_SIZE_STRING));
-	  memset(workingDirectory, '\0',MAX_SIZE_STRING);
-	  memcpy(workingDirectory,getcwd(NULL,MAX_SIZE_STRING),MAX_SIZE_STRING);
-	  iSendResult = send( ClientSocket,responseCWD,sizeof(responseCWD),0 );
+	  wayToCWD[i-1] = 0;
+	  cout << workingDirectory  << " " << index << " " <<  wayToCWD << endl;
+	  if(wayToCWD[1] != ':')
+	  {
+	  strcat(workingDirectory,"\\");
+	  strcat(workingDirectory,wayToCWD);
+	  cout << workingDirectory << endl;
+	  send(clientsocket,responseCWD,sizeof(responseCWD),0 );
+	  }
+	  else
+	  {
+      memset(workingDirectory, '\0',MAX_SIZE_STRING);
+	  memcpy(workingDirectory,wayToCWD,MAX_SIZE_STRING);
+	  cout << workingDirectory << endl;
+	  send(clientsocket,responseCWD,sizeof(responseCWD),0 );
+	  }
 	}
 	 if(!strcmp(command, "MKD"))
 	{
-	  printf("MKD command response\n");
-	  
-	   memset(newdirectoryname, '\0',MAX_SIZE_STRING);
-	   memcpy(newdirectoryname,recvbuf+4,MAX_SIZE_STRING);
-	   int i;
-	   for(i=0;newdirectoryname[i]!='\n';i++)
+	  printf("MKD\n");	  
+	  memset(newdirectoryname, '\0',MAX_SIZE_STRING);
+	  memcpy(newdirectoryname,recvbuf+4,MAX_SIZE_STRING);
+	  int i;
+	  for(i=0;newdirectoryname[i]!='\n';i++)
 	  {}
-	  newdirectoryname[i-1]='\0';
-	  printf("NEWDIRECTORYNAME %s",newdirectoryname);
-	   int result;
-        result = mkdir(newdirectoryname);
-        if (result==0)
-		{
-            printf("Create new directory success\n");
-		}
-        else
-		{
-            printf("Error create new directory\n");
-		}
-
-
-	   iSendResult = send(ClientSocket,responseMKD,sizeof(responseMKD),0 );
+	  newdirectoryname[i-1]='\0';	 
+	  if(mkdir(newdirectoryname))
+	  {      
+      printf("Error create new directory\n");
+	  } 
+	  send(clientsocket,responseMKD,sizeof(responseMKD),0 );
 	}
 	  if(!strcmp(command, "QUIT"))
 	{
-	   printf("QUIT command response\n");
-	   printf("FTP server quitting..\n");
-	   iSendResult = send(ClientSocket,responseQUIT,sizeof(responseQUIT),0 );
-	   exit(1);
+	   printf("QUIT\n");	   
+	   send(clientsocket,responseQUIT,sizeof(responseQUIT),0 );
+	   return 0;
 	}
 
-	  if(!strcmp(command, "PORT"))
+	  if(msg.substr(0,4) == "PORT")
 	{
-	   printf("PORT command response\n");	 
-	   iSendResult = send(ClientSocket,responsePORT,sizeof(responsePORT),0 );	   
+	   printf("PORT\n");  
+	   int c2 = msg.rfind(",");
+	   int c1 = msg.rfind(",",c2-1);	 
+	   int portNumber = atoi(msg.substr(c1+1,c2-c1).c_str()) * 256;
+	   portNumber += atoi(msg.substr(c2+1).c_str());      
+	   string address = msg.substr(5,c1-5);
+	   for(int i = 0; i < address.size(); i++)
+		{
+		  if(address.substr(i,1) == ",")
+		     {
+		      address.replace(i,1,".");
+		     }
+		 }        
+          DataPortSocket = socket(AF_INET, SOCK_STREAM, 0);
+	      struct sockaddr_in anAddr;
+          anAddr.sin_family = AF_INET;
+          anAddr.sin_port = htons (portNumber);
+		  anAddr.sin_addr.S_un.S_addr = inet_addr(address.c_str());
+          connect(DataPortSocket, (struct sockaddr *)&anAddr, sizeof(struct sockaddr));
+	      send(clientsocket,responsePORT,sizeof(responsePORT),0 );	   
 	}
 
 	    if(!strcmp(command, "RETR"))
 	{
+	   char copydownloadfilename[DEFAULT_BUFLEN]="\\";
+	   char copyworkingDirectory[MAX_SIZE_STRING];
 	   char port[MAXLINE],buffer[MAXLINE],char_num_blks[MAXLINE],char_num_last_blk[MAXLINE];
 	   int datasock,lSize,num_blks,num_last_blk,i;
-	   printf("RETR command response\n");	 
-	   
-
+	   printf("RETR %d\n",index);
 	   memset(downloadfilename, '\0',MAX_SIZE_STRING);
-	   memcpy(downloadfilename,recvbuf+5,MAX_SIZE_STRING);
-	  
+	   memcpy(downloadfilename,recvbuf+5,MAX_SIZE_STRING);	 
 	   for(i=0;downloadfilename[i]!='\n';i++)
 	   {}
-	   downloadfilename[i-1]='\0';
-	   printf("downloadfilename = %s\n",downloadfilename);  
-	   
-	  
-       FILE*fp;
-	   if ((fp = fopen(downloadfilename, "rb"))==NULL) {
-         printf("CANNOT OPEN FILE.\n");
+	   downloadfilename[i-1]='\0';  
+       FILE*fp;	   
+	   strcpy(copyworkingDirectory,workingDirectory);
+	   strcat(copydownloadfilename,downloadfilename);
+	   strcat(copyworkingDirectory,copydownloadfilename);	  
+	   if ((fp = fopen(copyworkingDirectory, "rb"))==NULL) {
+		printf("CURRENT DIR IS = %s\n",getcwd(NULL,MAX_SIZE_STRING));
+         printf("CANNOT OPEN FILE NAME = %s.\n",downloadfilename);
 	   }
 	   else
-	   {
-	   printf("OPEN FILE SUCCES.\n");
-       iSendResult = send(ClientSocket,responseRETR1,sizeof(responseRETR1),0 );
+	   {	  
+       send(clientsocket,responseRETR1,sizeof(responseRETR1),0 );
 	   fseek (fp , 0 , SEEK_END);
 		lSize = ftell (fp);
 		rewind (fp);
-		num_blks = lSize/MAXLINE;
-		cout << "lSize = " << lSize << endl;
-		num_last_blk = lSize%MAXLINE; 
-		cout << " num_liast_block = " << num_last_blk << endl;
-		sprintf(char_num_blks,"%d",num_blks);
-		cout << " char_num_blks = " << char_num_blks << endl;
-		//send(ClientSocket,char_num_blks,MAXLINE,0 );
-		cout<<num_blks<<" number blocks	"<<num_last_blk<<endl;
-		
+		num_blks = lSize/MAXLINE;		
+		num_last_blk = lSize%MAXLINE; 	
+		sprintf(char_num_blks,"%d",num_blks);		
 		for(i= 0; i < num_blks; i++) { 
 			fread (buffer,sizeof(char),MAXLINE,fp);			
-			send(DataSocket1,buffer,MAXLINE, 0);
-			cout<<"buffer " << buffer<<"	"<<i<<endl;
+			send(DataPortSocket,buffer,MAXLINE, 0);		
 		}
-
-		sprintf(char_num_last_blk,"%d",num_last_blk);
-		//send(ClientSocket,char_num_last_blk,MAXLINE,0 );
+		sprintf(char_num_last_blk,"%d",num_last_blk);	
 		if (num_last_blk > 0) { 
 			fread (buffer,sizeof(char),num_last_blk,fp);
-			send(DataSocket1,buffer,num_last_blk, 0);
-			cout<<"buffer_last_blk" << buffer<<endl;
+			send(DataPortSocket,buffer,num_last_blk, 0);			
 		}
 		fclose(fp);
-		send(ClientSocket,responseRETR2,sizeof(responseRETR2),0);
-		closesocket(DataSocket);
-	    closesocket(DataSocket1);
-		shutdown(DataSocket1,SD_SEND);
-		
-		cout<<"File upload done.\n";
-		return 0;
+		send(clientsocket,responseRETR2,sizeof(responseRETR2),0);		
+		shutdown(DataPortSocket,SD_SEND);		
+		closesocket(DataPortSocket);
+		//closesocket(ListenDataPasvSocket);
+		// ReleaseMutex(mutexPASV);
+		// WSACleanup();
 	   } 
 	}
 
 		if(!strcmp(command, "STOR"))
 	{
-	   printf("STOR command response\n");	 
-	   iSendResult = send(ClientSocket,responseSTOR1,sizeof(responseSTOR1),0 );
+	   printf("STOR\n");	 
+	   send(clientsocket,responseSTOR1,sizeof(responseSTOR1),0 );
 
 	  memset(createnewfilename, '\0',MAX_SIZE_STRING);
 	  memcpy(createnewfilename,recvbuf+5,MAX_SIZE_STRING);
@@ -322,29 +332,29 @@ DWORD WINAPI  ThreadFunc(LPVOID pParam)   // œŒ“Œ -ÕŒ¬Œ…  À»≈Õ“ ( “Œ“ ∆≈ —¿Ã€…)
 	  createnewfilename[i-1]='\0';
 
 	   ofstream fout(createnewfilename);
-	   iSendResult = send(ClientSocket,responseSTOR2,sizeof(responseSTOR2),0 );	
-	   shutdown(DataSocket1,SD_SEND);
-	   closesocket(DataSocket);
-	   closesocket(DataSocket1);
+	   send(clientsocket,responseSTOR2,sizeof(responseSTOR2),0 );	
+	   shutdown(DataPasvSocket,SD_SEND);
+	   closesocket(DataPasvSocket);
+	   closesocket(ListenDataPasvSocket);
 	}
 		if(!strcmp(command, "ABOR"))
 	{
-	   printf("ABOR command response\n");	 
-	   iSendResult = send(ClientSocket,responseABOR1,sizeof(responseABOR1),0 );	  
-	   iSendResult = send(ClientSocket,responseABOR2,sizeof(responseABOR2),0 );	 
+	   printf("ABOR\n");	 
+	   send(clientsocket,responseABOR1,sizeof(responseABOR1),0 );	  
+	   send(clientsocket,responseABOR2,sizeof(responseABOR2),0 );	 
 	}
 		if(!strcmp(command, "RNFR"))
 	{
-	   printf("RNFR command response\n");
+	   printf("RNFR\n");
 	   memset(oldfilename, '\0',MAX_SIZE_STRING);
 	   memcpy(oldfilename,recvbuf+5,MAX_SIZE_STRING);
-	   printf("OLDFILENAME = %s\n",oldfilename);
-	   iSendResult = send(ClientSocket,responseRNFR,sizeof(responseRNFR),0 );	  	 
+	  // printf("OLDFILENAME = %s\n",oldfilename);
+	   send(clientsocket,responseRNFR,sizeof(responseRNFR),0 );	  	 
 	}
 
 		if(!strcmp(command, "RNTO"))
 	{
-	   printf("RNTO command response\n");
+	   printf("RNTO\n");
 	   memset(newfilename, '\0',MAX_SIZE_STRING);
 	   memcpy(newfilename,recvbuf+5,MAX_SIZE_STRING);
 	   int i;
@@ -363,80 +373,68 @@ DWORD WINAPI  ThreadFunc(LPVOID pParam)   // œŒ“Œ -ÕŒ¬Œ…  À»≈Õ“ ( “Œ“ ∆≈ —¿Ã€…)
 	   {  
 		   perror("fail file rename:");           
 	   }
-	   printf("NEWFILENAME  = %s\n",recvbuf+5);
-	   iSendResult = send(ClientSocket,responseRNTO,sizeof(responseRNTO),0);	  	 
+	   //printf("NEWFILENAME  = %s\n",recvbuf+5);
+	   send(clientsocket,responseRNTO,sizeof(responseRNTO),0);	  	 
 	}
-
-
 			if(!strcmp(command, "PASV"))
 	{
-	   printf("PASV command response\n");	  
-	   iSendResult = send( ClientSocket,responsePASV,sizeof(responsePASV),0 );
+		printf("PASV %d\n",index);
+	   WaitForSingleObject(mutexPASV,INFINITE);
+	 
+	   send(clientsocket,responsePASV,sizeof(responsePASV),0 );
 
 	      // Resolve the server address and port
-    iResult = getaddrinfo(NULL, DEFAULT_DATA_PORT, &hints, &result);
-    if ( iResult != 0 ) {
-        printf("data connection getaddrinfo failed with error: %d\n", iResult);
-        WSACleanup();
-        return 1;
-    }
+       getaddrinfo(NULL, DEFAULT_DATA_PORT, &hints, &result);
+         if ( iResult != 0 ) {
+        printf("data connection getaddrinfo failed with error: %d\n %d", iResult,index);
+        WSACleanup(); 
+		return 1;
+         }
 
     // Create a SOCKET for connecting to server
-    DataSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if (DataSocket == INVALID_SOCKET) {
-        printf("data connection socket failed with error: %ld\n", WSAGetLastError());
+    ListenDataPasvSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if (ListenDataPasvSocket == INVALID_SOCKET) {
+        printf("data connection socket failed with error: %ld\n %d", WSAGetLastError(),index);
         freeaddrinfo(result);
-        WSACleanup();
-        return 1;
+        WSACleanup(); 
+		return 1;
     }
-	else
-		printf("data connection succes\n");
 
     // Setup the TCP listening socket
-    iResult = bind( DataSocket, result->ai_addr, (int)result->ai_addrlen);
+    bind(ListenDataPasvSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
-        printf("data connection bind failed with error: %d\n", WSAGetLastError());
+        printf("data connection bind failed with error: %d %d\n", WSAGetLastError(),index);
         freeaddrinfo(result);
-        closesocket(DataSocket);
-        WSACleanup();
-        return 1;
+        closesocket(DataPasvSocket);
+        WSACleanup(); 
+		return 1;
     }
-	else
-		printf("bind connection error\n");
-
     freeaddrinfo(result);
 
-    iResult = listen(DataSocket, SOMAXCONN);
+    listen(ListenDataPasvSocket, SOMAXCONN);
     if (iResult == SOCKET_ERROR) {
-        printf("data connection listen failed with error: %d\n", WSAGetLastError());
-        closesocket(DataSocket);
-        WSACleanup();
-        return 1;
-    }
-	else
-		printf("list success\n");
-		 
-		
-
-    DataSocket1 = accept(DataSocket, NULL, NULL);
-    if (DataSocket1 == INVALID_SOCKET) {
-        printf("data connection accept failed with error: %d\n"
-			, WSAGetLastError());
-        closesocket(DataSocket);
-        WSACleanup();
-        return 1;
-    }
-	else
-		printf("data conneciton accepts success\n");
+        printf("data connection listen failed with error: %d\n %d", WSAGetLastError(),index);
+        closesocket(DataPasvSocket);
+        WSACleanup();  
+		return 1;
+    }	
 	
-	 printf("data connection Accept client succesfull\n");
-	 iResult =  1;
-
+	printf("do data connection accept success %d\n",index);
+    DataPasvSocket = accept(ListenDataPasvSocket, NULL, NULL);
+    if (DataPasvSocket == INVALID_SOCKET) {
+        printf("data connection accept failed with error: %d %d\n"
+			, WSAGetLastError(),index);
+        closesocket(DataPasvSocket);
+        WSACleanup();
+		return 1;
+    }
+	printf("data connection accept success %d\n",index);
+	
 	}
 			if(!strcmp(command, "LIST"))
     {		
-	
-	  iResult = send( ClientSocket,responseLIST1,sizeof(responseLIST1),0 );	
+	printf("LIST %d\n",index);
+	send(clientsocket,responseLIST1,sizeof(responseLIST1),0 );	
 	char fileInfo[MAXLINE];
 	char fileAttributes[MAXLINE];
 	char fileSize[MAXLINE];
@@ -456,7 +454,7 @@ DWORD WINAPI  ThreadFunc(LPVOID pParam)   // œŒ“Œ -ÕŒ¬Œ…  À»≈Õ“ ( “Œ“ ∆≈ —¿Ã€…)
 	memset(fileTime, '\0',MAXLINE);	
 	memset(currentDir, '\0',MAXLINE);	
 	WIN32_FIND_DATA fd; 
-	strcpy(currentDir,getcwd(NULL,MAX_SIZE_STRING));
+	strcpy(currentDir,workingDirectory);
 	strcat(currentDir,"/*.*");
     HANDLE hFind = FindFirstFile(currentDir, &fd); 
     if(hFind != INVALID_HANDLE_VALUE) { 
@@ -492,39 +490,38 @@ DWORD WINAPI  ThreadFunc(LPVOID pParam)   // œŒ“Œ -ÕŒ¬Œ…  À»≈Õ“ ( “Œ“ ∆≈ —¿Ã€…)
 			strcat(fileInfo," ");
 			strcat(fileInfo,fd.cFileName);
 			strcat(fileInfo,"\r\n");
-            send(DataSocket1,fileInfo,MAXLINE, 0);
+            send(DataPortSocket,fileInfo,MAXLINE, 0);
 			   
          memset(fileInfo, '\0',MAXLINE);      
         }while(FindNextFile(hFind, &fd)); 
         FindClose(hFind); 
     } 		
-	  iResult = send( ClientSocket,responseLIST2,sizeof(responseLIST2),0 );	  
-	  shutdown(DataSocket1,SD_SEND);
-	  closesocket(DataSocket);
-	  closesocket(DataSocket1);
+	  send(clientsocket,responseLIST2,sizeof(responseLIST2),0 );	  
+	  shutdown(DataPortSocket,SD_SEND);
+	  closesocket(DataPortSocket);	 
+	  closesocket(ListenDataPasvSocket);
+	//  ReleaseMutex(mutexPASV);
+	 
 	}
-    } while (iResult > 0);	
+    } while (iRecv > 0);
+	  cout << "THREAD IS BREAKING " << index <<  endl;
+	  // shutdown(DataPasvSocket,SD_SEND);
+	  //closesocket(DataPasvSocket);	
+	  //closesocket(ListenDataPasvSocket);
+	  //ReleaseMutex(mutexPASV);
+	  //shutdown(DataPortSocket,SD_SEND);
+	  //closesocket(DataPortSocket);
+	  shutdown(clientsocket,SD_SEND);
+	  closesocket(clientsocket);
    }
 
-   
-    
-
-
-
-
-
-
-
-
 int  main() 
-{    
-	for(int i = 0 ;i< strlen(workingDirectory);i++)
-	{
-		printf("%c",workingDirectory[i]);
-		
-	}
+{
+	int count = 1;
+	setlocale(LC_ALL,"Russian");
+	
 
-	chdir(workingDirectory);   // ·‡Á‡ ÒÂ‚Â‡.
+	chdir("D:/usb");   // ·‡Á‡ ÒÂ‚Â‡.
 
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
@@ -589,8 +586,8 @@ int  main()
         return 1;
     }
 	else
-	{   printf("NEW CONNECT\n");
-		thread =  CreateThread(NULL,0,ThreadFunc,NULL,0,&threadID);
+	{   printf("\nNEW CONNECT\n");		
+		thread =  CreateThread(NULL,0,ThreadFunc,(LPVOID)ClientSocket,0,&threadID);
 	}
 	}
 
@@ -606,8 +603,7 @@ int  main()
 	closesocket(ListenSocket);
     closesocket(ClientSocket);
 	printf("Server ended\n");
-	getch();
+	getch();	
     WSACleanup();
     return 0;
 }
-
