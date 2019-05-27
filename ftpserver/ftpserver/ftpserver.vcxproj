@@ -74,11 +74,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ConnectSocket.cpp" />
+    <ClCompile Include="ConnectThread.cpp" />
+    <ClCompile Include="DataSocket.cpp" />
     <ClCompile Include="ftpserver.cpp" />
+    <ClCompile Include="ListenSocket.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UserManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ConnectSocket.h" />
+    <ClInclude Include="ConnectThread.h" />
+    <ClInclude Include="DataSocket.h" />
+    <ClInclude Include="ftpserver.h" />
     <ClInclude Include="library.h" />
+    <ClInclude Include="ListenSocket.h" />
+    <ClInclude Include="UserManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
