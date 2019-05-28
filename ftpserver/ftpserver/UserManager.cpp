@@ -1,53 +1,8 @@
 #include "UserManager.h"
 
-
-Directory::Directory()
-{
-}
-
-Directory::Directory(string one , string two)
-{
-	this-> strDir = one;
-    this-> strAlias = two;
-}
-
-Directory::~Directory()
-{
-}
-
-
-Directory::Directory(const Directory &dir)
-{
-	strDir = dir.strDir;
-	strAlias = dir.strAlias;
-	AllowDownload = dir.AllowDownload;
-	AllowUpload = dir.AllowUpload;
-	AllowRename = dir.AllowRename;
-	AllowDelete = dir.AllowDelete;
-	AllowCreateDirectory = dir.AllowCreateDirectory;
-	IsHomeDir = dir.IsHomeDir;
-}
-
-
-Directory& Directory::operator=(const Directory &dir)
-{
-	if (&dir != this)
-	{
-		strDir = dir.strDir;
-		strAlias = dir.strAlias;
-		AllowDownload = dir.AllowDownload;
-		AllowUpload = dir.AllowUpload;
-		AllowRename = dir.AllowRename;
-		AllowDelete = dir.AllowDelete;
-		AllowCreateDirectory = dir.AllowCreateDirectory;
-		IsHomeDir = dir.IsHomeDir;
-	}
-	return *this;
-}
-
 User::User()
 {
-	AccountDisabled = FALSE;
+	AnonymousMode = FALSE;
 }
 
 
@@ -55,7 +10,7 @@ User::User(string name , string password)
 {  
 	this->Name = name;
 	this->Password = password;
-	AccountDisabled = FALSE;
+	this->AnonymousMode = FALSE;
 }
 
 User::~User()
@@ -67,9 +22,10 @@ User::User(const User &user)
 {
 	Name = user.Name;
 	Password = user.Password;
-	AccountDisabled = user.AccountDisabled;
-	for (int i=0; i < user.DirectoryArray.size(); i++)
-		DirectoryArray.push_back(user.DirectoryArray[i]);
+	AnonymousMode = user.AnonymousMode;
+	strDir = user.strDir;
+	/*for (int i=0; i < user.DirectoryArray.size(); i++)
+		DirectoryArray.push_back(user.DirectoryArray[i]);*/
 }
 
 User& User::operator=( User &user)
@@ -78,9 +34,7 @@ User& User::operator=( User &user)
 	{
 		Name = user.Name;
 		Password = user.Password;
-		AccountDisabled = user.AccountDisabled;
-		for (int i=0; i < user.DirectoryArray.size(); i++)
-			DirectoryArray.push_back(user.DirectoryArray[i]);
+		AnonymousMode = user.AnonymousMode;		
 	}
 	return *this;
 }
@@ -89,8 +43,49 @@ User& User::operator=( User &user)
 UserManager::UserManager()
 {
 	
-	Filename += "C:/users.dat";
-	strcpy(currentDirectory,"D:/usb");
+	Filename += "./UsersInfo.txt";
+	
+}
+
+BOOL UserManager::workWithFile(bool mode)
+{
+	User user;	
+	int i = 0;
+
+	string line;
+  ifstream myfile (Filename);
+  if (myfile.is_open())
+  {
+    while ( getline (myfile,line) )
+    {
+		if(line == ""){
+			cout <<"empty" << endl;
+			continue;
+		}
+    switch(i)
+	{
+	case 0:
+		{
+			user.Name = line;
+			i = 1;
+		}break;
+	case 1:
+		{
+			user.Password = line;			
+			i = 2;
+		}break;
+	case 2:
+		{	user.strDir = line;				
+			this->UserArray.push_back(user);			
+			i = 0;
+		}break;	
+	}		
+    }
+    myfile.close();
+	return TRUE;	
+  }
+  else cout << "Unable to open file" << endl;
+ return FALSE;
 }
 
 
@@ -98,13 +93,15 @@ UserManager::~UserManager(void)
 {
 }
 
-BOOL UserManager::GetUser(LPCTSTR lpszUser, User &user)
+BOOL UserManager::GetUser(string nameUser, User &user)
 {
-	
+	nameUser.pop_back();
+	nameUser.pop_back();
+
 	//m_CriticalSection.Lock();
 	for (int i=0; i<UserArray.size(); i++)
-	{
-		if (UserArray[i].Name == lpszUser)                           // ÑÐÀÂÍÈÂÀÅÌ ÍÅ Ó×ÈÒÛÂÀß ÐÅÃÈÑÒÐ ( âåðõíèé èëè íèæíèé)
+	{		
+		if (UserArray[i].Name == nameUser)                          
 		{
 			user = UserArray[i];
 			//m_CriticalSection.Unlock();
@@ -137,7 +134,7 @@ void UserManager::GetUserList(vector<User>&array)
 	//m_CriticalSection.Unlock();
 }
 
-vector <string> UserManager::GetDirectoryList() //LPCTSTR lpszUser, LPCTSTR lpszDirectory, string &strResult
+vector <string> UserManager::GetDirectoryList(char *currentDirectory) //LPCTSTR lpszUser, LPCTSTR lpszDirectory, string &strResult
 {
 	
 	vector <string> resultList;
@@ -212,14 +209,14 @@ vector <string> UserManager::GetDirectoryList() //LPCTSTR lpszUser, LPCTSTR lpsz
 	return resultList;
 }
 
- int UserManager::ChangeDirectory(char* currentDir,char* waytocwd)
+ int UserManager::ChangeDirectory(char* currentDirectory,string waytocwd)
  {
 	  int i = 0;
 	  char wayToCWD[MAX_SIZE_STRING];	
 
-	  for(i = 0;waytocwd[4+i]!='\n';i++)
+	  for(i = 0;waytocwd[i]!='\n';i++)
 	  {
-		  wayToCWD[i] = waytocwd[4+i];		  
+		  wayToCWD[i] = waytocwd[i];		  
 	  }
 	  wayToCWD[i-1] = 0;
 	  cout << currentDirectory << " " <<  wayToCWD << endl;
@@ -228,25 +225,20 @@ vector <string> UserManager::GetDirectoryList() //LPCTSTR lpszUser, LPCTSTR lpsz
 	  strcat(currentDirectory,"\\");
 	  strcat(currentDirectory,wayToCWD);	  
 	  cout << currentDirectory << endl;
-
-	  strcat(currentDir,"\\");
-	  strcat(currentDir,wayToCWD);
+	  
 	  return 1;
 	  }
 	  else
 	  {
       memset(currentDirectory, '\0',MAX_SIZE_STRING);
 	  memcpy(currentDirectory,wayToCWD,MAX_SIZE_STRING);
-	  cout << currentDirectory << endl;
-
-	  memset(currentDir, '\0',MAX_SIZE_STRING);
-	  memcpy(currentDir,wayToCWD,MAX_SIZE_STRING);
+	  cout << currentDirectory << endl;	 
 	  return 1;
 	  }
     
  }
 
- int UserManager::ChangeDirectoryCDUP(char* currentDir)
+ int UserManager::ChangeDirectoryCDUP(char* currentDirectory)
  {	  
 		 int i;
 		 char symbol;
@@ -266,15 +258,13 @@ vector <string> UserManager::GetDirectoryList() //LPCTSTR lpszUser, LPCTSTR lpsz
 	 {
       memset(currentDirectory+i,'\0',strlen(currentDirectory));
 	  strcat(currentDirectory,"\\");	
-	 } 
-	  memset(currentDir,'\0',strlen(currentDir));
-	  memcpy(currentDir,currentDirectory,MAX_SIZE_STRING);
+	 } 	 
 
 	  return 1;
     
  }
 
- int UserManager::CheckFileName(char* nameFile,char* result)
+ int UserManager::CheckFileName(string namefile,char* result,char *currentDirectory)
  {
 	   char downloadfilename[DEFAULT_BUFLEN]="\\";
 	   char copydownloadfilename[DEFAULT_BUFLEN]="\\";
@@ -283,7 +273,7 @@ vector <string> UserManager::GetDirectoryList() //LPCTSTR lpszUser, LPCTSTR lpsz
 	   int datasock,lSize,num_blks,num_last_blk,i;
 
 	   memset(downloadfilename, '\0',MAX_SIZE_STRING);
-	   memcpy(downloadfilename,nameFile+5,MAX_SIZE_STRING);	 
+	   memcpy(downloadfilename,namefile.c_str(),MAX_SIZE_STRING);	 
 	   for(i=0;downloadfilename[i]!='\n';i++)
 	   {}
 	   downloadfilename[i-1]='\0';  
@@ -292,8 +282,8 @@ vector <string> UserManager::GetDirectoryList() //LPCTSTR lpszUser, LPCTSTR lpsz
 	   strcat(copydownloadfilename,downloadfilename);
 	   strcat(copycurrentDirectory,copydownloadfilename);	  
 	   if ((fp = fopen(copycurrentDirectory, "rb"))==NULL) {
-		printf("CURRENT DIR IS = %s\n",getcwd(NULL,MAX_SIZE_STRING));
-         printf("CANNOT OPEN FILE NAME = %s.\n",downloadfilename);
+		
+         printf("CANNOT OPEN FILE NAME = %s.\n",copycurrentDirectory);
 		 return 0;
 	   }
 	   else

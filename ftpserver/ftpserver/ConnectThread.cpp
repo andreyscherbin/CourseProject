@@ -29,11 +29,11 @@ DWORD WINAPI InitInstance(LPVOID pParam)
 	printf("start thread %d socket = %d",Param->numberThread,Param->thread.a_ConnectSocket.clientsocket);
 	thread.a_ConnectSocket.server = thread.Server;	
 	thread.a_ConnectSocket.a_Thread = &thread;
-	send(Param->thread.a_ConnectSocket.clientsocket,"220 Andrey Scherbin FTP-Server",sizeof("220 Andrey Scherbin FTP-Server"),0); // вернуть из сервака приглос
-	thread.a_ConnectSocket.OnReceive();
-	while(true)
-	{
-	}
+	string str = thread.Server->GetWelcomeMessage();
+	str+="\r\n";
+	send(Param->thread.a_ConnectSocket.clientsocket,str.c_str(),str.size(),0); // вернуть из сервака приглос
+	thread.a_ConnectSocket.OnReceive(Param->numberThread);
+	return 0;
 }
 
 DWORD WINAPI ExitInstance(LPVOID pParam)

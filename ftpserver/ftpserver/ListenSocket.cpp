@@ -11,6 +11,8 @@ struct parametr_for_thread{
     }
 };
 
+ int number = 0;
+
 
 
 ListenSocket::ListenSocket(void)
@@ -81,8 +83,9 @@ bool ListenSocket::OnAccept()
 
 		pThread.Server = this->Server;
 		pThread.a_ConnectSocket.clientsocket = this->CLIENTSOCKET;
-
-		parametr_for_thread* Param=new parametr_for_thread(pThread,1);                            // не забудь сделать освобождение памяти
+		number++;
+		parametr_for_thread* Param=new parametr_for_thread(pThread,number);                            // не забудь сделать освобождение памяти
+		
 	    pThread.thread =  CreateThread(NULL,0,InitInstance,(LPVOID)Param,0,&pThread.threadID);		
 	}
   return true;

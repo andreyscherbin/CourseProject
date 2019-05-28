@@ -6,162 +6,177 @@
 #include "DataSocket.h"
 
 ConnectSocket::ConnectSocket(void)
-{
-	Loggedon = FALSE;
-	RenameFile = FALSE;
+{	
 	a_DataSocket = NULL;
 	RemoteHost = "";
-	RemotePort = -1;
-	RestartOffset = 0;
+	RemotePort = -1;	
 	PassiveMode = FALSE;
 	clientsocket = INVALID_SOCKET;
-
 	strcpy(currentDirectory,"D:/usb");
 }
 
 
 ConnectSocket::~ConnectSocket(void)
 {
+	DestroyDataConnection();	
 }
 
-int ConnectSocket::OnReceive(void)   // ПОТОК-НОВОЙ КЛИЕНТ ( ТОТ ЖЕ САМЫЙ)
-   {
+void ConnectSocket::OnClose() 
+{ 
+	shutdown(clientsocket,SD_SEND);
+	closesocket(clientsocket);
+}
 
-int global = 1;
-int iRecv;    
-struct addrinfo *result = NULL;
-struct addrinfo hints;
-int iSendResult;
-int iResult;
-  	
-//HANDLE mutexPASV = CreateMutex(NULL,FALSE,"mutex PASV");	
+void ConnectSocket::OnReceive(int numberThread)   
+{
+	char buff[DEFAULT_BUFLEN];
+	while(true)
+	{
+	int nRead = recv(clientsocket, buff, DEFAULT_BUFLEN, 0);
 
-int bytes = 0;
+	switch (nRead)
+	{
+		case 0:
+			OnClose();
+			printf("THREAD IS CLOSING %d\n",numberThread);
+			return;
 
-	   //ReleaseMutex(mutexPASV);
-	char workingDirectory[MAX_SIZE_STRING] = "D:/usb";  	
-	char oldfilename[MAX_SIZE_STRING] = "oldfilename.txt";                   // старое имя файла
-    char newfilename[MAX_SIZE_STRING] = "newfilename.txt";                   // новое имя файла
-	char deletefilename[MAX_SIZE_STRING]="deletefilename";
-	char newdirectoryname[MAX_SIZE_STRING]="newdirectoryname";
-	char createnewfilename[MAX_SIZE_STRING]="createnewfilename";
-	char downloadfilename[DEFAULT_BUFLEN]="downloadfilename";
-	char responseHELLO[DEFAULT_BUFLEN] = "220 Andrey Scherbin FTP-Server";
-	char responseOK[DEFAULT_BUFLEN]="220 OK";
-	char responseUSER[DEFAULT_BUFLEN] = "331 Anonymous login ok, send your complete email address as your password ";
-	char responsePASS[DEFAULT_BUFLEN] = "230 Logged in anonymously";	
-    char responsePWD[DEFAULT_BUFLEN] =  "";
-	char responseSYST[DEFAULT_BUFLEN] = "215 WIN";
-	char responseFEAT[DEFAULT_BUFLEN] = "211 Extensions supported";
-	char responseTYPE[DEFAULT_BUFLEN] = "200 Switching to Binary mode";
-	char responsePASV[DEFAULT_BUFLEN] = "227 Entering Passive Mode (172,20,10,5,0,20).";
-	char responsePORT[DEFAULT_BUFLEN] = "200 Entering Active Mode .";
-	char responseLIST1[DEFAULT_BUFLEN] = "150 Here comes the directory listing."; 
-	char responseLIST2[DEFAULT_BUFLEN] = "226 The directory listing send OK.";   
-	char responseDELE[DEFAULT_BUFLEN] =  "250 file delete successfully.";    
-	char responseRMD[DEFAULT_BUFLEN] =  "250 directory delete successfully.";
-	char responseCWD[DEFAULT_BUFLEN] =  "250 go to directory success.";
-	char responseCWDerror[DEFAULT_BUFLEN] =  "550 No such file or directory..";
-	char responseMKD[DEFAULT_BUFLEN] =  "257 create directory successfully.";
-	char responseQUIT[DEFAULT_BUFLEN] =  "221 quit successfully.";
-	char responseRETR1[DEFAULT_BUFLEN] = "150 Starting download file."; 
-	char responseRETR2[DEFAULT_BUFLEN] = "226 End download file.";   
-	char responseSTOR1[DEFAULT_BUFLEN] = "150 Starting upload file."; 
-	char responseSTOR2[DEFAULT_BUFLEN] = "226 End upload file.";
-	char responseABOR1[DEFAULT_BUFLEN] = "426 Starting cancel transfer."; 
-	char responseABOR2[DEFAULT_BUFLEN] = "226 End cancel transfer.";
-	char responseRNFR[DEFAULT_BUFLEN] =  "350 Chose file to rename success.";
-	char responseRNTO[DEFAULT_BUFLEN] =  "350 Rename file success.";
-	char responseCDUP[DEFAULT_BUFLEN] =  "250 CDUP command successful";
-	char responseREST[DEFAULT_BUFLEN] =  "350 Restarting";
-	
+		case SOCKET_ERROR:
+			if (GetLastError() != WSAEWOULDBLOCK) 
+			{
+				char szError[256];
+				wsprintf(szError, "OnReceive error: %d", GetLastError());				
+			}
+			break;
 
-
-	   char command[5];
-	   char recvbuf[DEFAULT_BUFLEN];
-	   char sendvbuf[DEFAULT_BUFLEN];
-       int recvbuflen = DEFAULT_BUFLEN;
-	   int sendvbuflen = DEFAULT_BUFLEN;
-	   SOCKET DataPasvSocket = INVALID_SOCKET;
-       SOCKET ListenDataPasvSocket = INVALID_SOCKET;
-	   SOCKET DataPortSocket = INVALID_SOCKET;
-	  
-	 
-	   int index = global;
-	   global++;      
-	   printf("Accept client succesfull %d socket = %d \n",index,clientsocket);                                         // Приглашение клиенту
-	   //send(clientsocket,responseHELLO,sizeof(responseHELLO),0 );
-	
-		do {
+		default:
+			if (nRead != SOCKET_ERROR && nRead != 0)
+			{					
 			
-			iRecv = recv(clientsocket,recvbuf, recvbuflen, 0);		  
-		    sscanf(recvbuf, "%s", command);	
-			string msg = "";
-	        for(int x = 0; x < iRecv; x++)
+			command = "";
+	        for(int i = 0; i < nRead; i++)
 	         {
-	          msg.push_back(recvbuf[x]);
-	          }	
-
-		if(!strcmp(command, "USER"))
-	{
-	  printf("USER %d\n",index);
-	  send(clientsocket,responseUSER,sizeof(responseUSER),0 );	 
+	          command.push_back(buff[i]);
+	         }	
+			ParseCommand(command,numberThread);
+			}	
+			break;
 	}
-      if(!strcmp(command, "REST"))
+	}
+}
+
+BOOL ConnectSocket::SendResponse(char* responseChar)
+{
+	string responseString = string(responseChar);
+	responseString+="\r\n";
+	int nBytes = send(clientsocket,responseString.c_str(),responseString.size(),0);
+
+	if (nBytes == SOCKET_ERROR)
 	{
-	  printf("REST %d\n",index);
-	  send(clientsocket,responseREST,sizeof(responseREST),0 );	 
+		OnClose();
+		return FALSE;
+	}	
+	return TRUE;
+}
+
+void ConnectSocket::getArgsFromCommand(string &command, string &args)
+{		
+	string delimiter = " ";
+	int positionDelimiter = command.find(delimiter);
+	if(positionDelimiter == -1){
+		args="";
+		return;
+	}
+	args = command.substr(command.find(delimiter)+1,command.size());		
+}
+
+   void ConnectSocket::ParseCommand(string command,int number)
+{
+	char commandChar[COMMAND_BUFLEN];
+	sscanf(command.c_str(), "%s",commandChar);
+	string args;	
+	getArgsFromCommand(command,args);	
+	
+		if(!strcmp(commandChar, "USER"))
+	{
+	  printf("USER %d\n",number);	  
+	  UserName = args;	  
+	  SendResponse("331 User name ok, need password");	 
 	}
 
-     if(!strcmp(command, "CDUP"))
+		if(!strcmp(commandChar, "PASS"))
+	{
+	  printf("PASS %d\n",number);
+	  User user;
+
+	  if (server->m_UserManager.GetUser(UserName, user))
+				{
+					args.pop_back();
+                    args.pop_back();
+					if ((user.Password == args ||  user.AnonymousMode))
+					{						
+						
+						SendResponse("230 User successfully logged in.");						
+					}
+					else
+					{
+						SendResponse("530 Not logged in, password incorrect!");
+					}
+	           }
+	  else
+	  {
+	  SendResponse("530 Not logged in, user incorrect!");
+	  }  	 
+	}
+
+      if(!strcmp(commandChar, "REST"))
+	{
+	  printf("REST %d\n",number);	 
+	  SendResponse("350 Restarting");
+	}
+
+     if(!strcmp(commandChar, "CDUP"))
 	 {
 	   int nResult = server->m_UserManager.ChangeDirectoryCDUP(currentDirectory);
 	  switch(nResult)
 			{				
 				case 1:
-					send(clientsocket,responseCDUP,sizeof(responseUSER),0);
+					SendResponse("250 CDUP command successful");
 					break;
 				default:
-					send(clientsocket,responseCDUP,sizeof(responseUSER),0);
+					SendResponse("250 CDUP command successful");
 					break;
 			}
 	 }
-		if(!strcmp(command, "PASS"))
+		
+		if(!strcmp(commandChar, "PWD"))
 	{
-	  printf("PASS %d\n",index);	  
-	  send(clientsocket,responsePASS,sizeof(responsePASS),0 );
+	   printf("PWD %d\n",number);
+	   char string[MAX_SIZE_STRING];
+	   wsprintf(string,"257 \"%s\" is current directory.",currentDirectory);
+	   SendResponse(string);	   
 	}
-		if(!strcmp(command, "PWD"))
+		if(!strcmp(commandChar, "SYST"))
 	{
-	   printf("PWD %d\n",index);
-	   responsePWD[0] = 0;
-	   string a  = "257 ";
-	   a  = a + "\"" + currentDirectory + "\"" + " is current directory";	  
-	   strcat(responsePWD,a.c_str());
-	   send(clientsocket,responsePWD,strlen(responsePWD)+1,0 );
-	   
-	}
-		if(!strcmp(command, "SYST"))
-	{
-	  printf("SYST\n");	  
-	   send(clientsocket,responseSYST,sizeof(responseSYST),0 );
+	  printf("SYST\n");	 
+	  SendResponse("215 WIN");	   
 	}	
 
-		if(!strcmp(command, "FEAT"))
+		if(!strcmp(commandChar, "FEAT"))
 	{
-	  printf("FEAT\n");	  
-	  send(clientsocket,responseFEAT,sizeof(responseFEAT),0 );
+	  printf("FEAT\n");		 
+	  SendResponse("211 Extensions supported");
 	}	
-		if(!strcmp(command, "TYPE"))
+		if(!strcmp(commandChar, "TYPE"))
 	{
-	  printf("TYPE %d\n",index);	  
-	   send(clientsocket,responseTYPE,sizeof(responseTYPE),0 );
+	   printf("TYPE %d\n",number);
+	   SendResponse("200 Switching to Binary mode");  // открываем файлы в бинарном режиме  
 	}
-		if(!strcmp(command, "DELE"))
+		if(!strcmp(commandChar, "DELE"))
 	{
-	  printf("DELE\n");
+	 /* printf("DELE\n");
 	  memset(deletefilename, '\0',MAX_SIZE_STRING);
-	  memcpy(deletefilename,recvbuf+5,MAX_SIZE_STRING);
+	  memcpy(deletefilename,buff+5,MAX_SIZE_STRING);
 	  int i;
 	  for(i=0;deletefilename[i]!='\n';i++)
 	  {}
@@ -169,34 +184,34 @@ int bytes = 0;
 	  if(remove(deletefilename))
 	  {
      perror("delete file error:");
-	  }     
-	   send(clientsocket,responseDELE,sizeof(responseDELE),0 );
+	  } 	 
+	  SendResponse("250 file delete successfully.");*/
 	}
-     if(!strcmp(command, "RMD"))
+     if(!strcmp(commandChar, "RMD"))
 	{
 	  printf("RMD\n");	
-	   send(clientsocket,responseRMD,sizeof(responseRMD),0 );
+	  SendResponse("250 directory delete successfully.");	  
 	}
-	 if(!strcmp(command, "CWD"))
+	 if(!strcmp(commandChar, "CWD"))
 	{	
-		printf("CWD %d\n",index);
-       int nResult = server->m_UserManager.ChangeDirectory(currentDirectory,recvbuf);
+		printf("CWD %d\n",number);
+       int nResult = server->m_UserManager.ChangeDirectory(currentDirectory,args);
 	  switch(nResult)
 			{				
-				case 1:
-					send(clientsocket,responseCWD,sizeof(responseCWD),0 );
+				case 1:					
+					SendResponse("250 go to directory success.");
 					break;
-				default:
-					send(clientsocket,responseCWD,sizeof(responseCWD),0 );
+				default:					
+					SendResponse("250 go to directory success.");
 					break;
 			}
 
 	}
-	 if(!strcmp(command, "MKD"))
+	 if(!strcmp(commandChar, "MKD"))
 	{
-	  printf("MKD\n");	  
+	 /* printf("MKD\n");	  
 	  memset(newdirectoryname, '\0',MAX_SIZE_STRING);
-	  memcpy(newdirectoryname,recvbuf+4,MAX_SIZE_STRING);
+	  memcpy(newdirectoryname,buff+4,MAX_SIZE_STRING);
 	  int i;
 	  for(i=0;newdirectoryname[i]!='\n';i++)
 	  {}
@@ -205,23 +220,23 @@ int bytes = 0;
 	  {      
       printf("Error create new directory\n");
 	  } 
-	  send(clientsocket,responseMKD,sizeof(responseMKD),0 );
+	  "257 create directory successfully."
+	  send(clientsocket,responseMKD,sizeof(responseMKD),0 );*/
 	}
-	  if(!strcmp(command, "QUIT"))
+	  if(!strcmp(commandChar, "QUIT"))
 	{
 	   printf("QUIT\n");	   
-	   send(clientsocket,responseQUIT,sizeof(responseQUIT),0 );
-	   return 0;
+	   SendResponse("221 quit successfully.");	   
 	}
 
-	  if(msg.substr(0,4) == "PORT")
+	  if(command.substr(0,4) == "PORT")  // specify IP and port (PORT a1,a2,a3,a4,p1,p2) -> IP address a1.a2.a3.a4, port p1*256+p2.
 	{
 	   printf("PORT\n");  
-	   int c2 = msg.rfind(",");
-	   int c1 = msg.rfind(",",c2-1);	 
-	   int portNumber = atoi(msg.substr(c1+1,c2-c1).c_str()) * 256;
-	   portNumber += atoi(msg.substr(c2+1).c_str());      
-	   string address = msg.substr(5,c1-5);
+	   int c2 = command.rfind(",");
+	   int c1 = command.rfind(",",c2-1);	 
+	   int portNumber = atoi(command.substr(c1+1,c2-c1).c_str()) * 256;
+	   portNumber += atoi(command.substr(c2+1).c_str());      
+	   string address = command.substr(5,c1-5);
 	   for(int i = 0; i < address.size(); i++)
 		{
 		  if(address.substr(i,1) == ",")
@@ -231,24 +246,23 @@ int bytes = 0;
 		 }
 	   this->PassiveMode=FALSE;
 	   this->RemotePort=portNumber;
-	   this->RemoteHost=address;
-
-	  send(clientsocket,responsePORT,sizeof(responsePORT),0 );	   
+	   this->RemoteHost=address;	 
+	  SendResponse("200 Entering Active Mode .");
 	}
 
-	    if(!strcmp(command, "RETR"))
+	    if(!strcmp(commandChar, "RETR"))
 	{
-	   printf("RETR %d\n",index);	   
+	   printf("RETR %d\n",number);	   
 	   vector <string> list;
 	   char result[DEFAULT_BUFLEN];
-	   int nResult = server->m_UserManager.CheckFileName(recvbuf,result);
+	   int nResult = server->m_UserManager.CheckFileName(args,result,currentDirectory);
 			switch(nResult)
 			{				
-				case 0:					
-					send(clientsocket,"550 File not found.",sizeof("550 File not found."),0 );
+				case 0:						
+					SendResponse("550 File not found.");
 					break;
-				default:
-					send(clientsocket,responseRETR1,sizeof(responseRETR1),0);
+				default:					
+					SendResponse("150 Starting download file.");
 				    list.push_back(string(result));					
 					if (!CreateDataConnection(1,list))
 					{
@@ -256,47 +270,46 @@ int bytes = 0;
 					}
 					break;
 			}
-			break;	    
+				    
 	}
 
-		if(!strcmp(command, "STOR"))
+		if(!strcmp(commandChar, "STOR"))
 	{
-	   printf("STOR\n");	 
-	   send(clientsocket,responseSTOR1,sizeof(responseSTOR1),0 );
-
+	  /* printf("STOR\n");		 
+	  SendResponse("150 Starting upload file.");
 	  memset(createnewfilename, '\0',MAX_SIZE_STRING);
-	  memcpy(createnewfilename,recvbuf+5,MAX_SIZE_STRING);
+	  memcpy(createnewfilename,buff+5,MAX_SIZE_STRING);
 	  int i;
 	  for(i=0;createnewfilename[i]!='\n';i++)
 	  {}
 	  createnewfilename[i-1]='\0';
-
+	 
 	   ofstream fout(createnewfilename);
-	   send(clientsocket,responseSTOR2,sizeof(responseSTOR2),0 );	
-	   shutdown(DataPasvSocket,SD_SEND);
-	   closesocket(DataPasvSocket);
-	   closesocket(ListenDataPasvSocket);
+	    SendResponse("226 End upload file.");
+	  */	  
+	  
 	}
-		if(!strcmp(command, "ABOR"))
+		if(!strcmp(commandChar, "ABOR"))
 	{
 	   printf("ABOR\n");	 
-	   send(clientsocket,responseABOR1,sizeof(responseABOR1),0 );	  
-	   send(clientsocket,responseABOR2,sizeof(responseABOR2),0 );	 
+	   SendResponse("426 Starting cancel transfer.");
+	   SendResponse("226 End cancel transfer.");	  
 	}
-		if(!strcmp(command, "RNFR"))
+		if(!strcmp(commandChar, "RNFR"))
 	{
-	   printf("RNFR\n");
+	   /*printf("RNFR\n");
 	   memset(oldfilename, '\0',MAX_SIZE_STRING);
-	   memcpy(oldfilename,recvbuf+5,MAX_SIZE_STRING);
-	  // printf("OLDFILENAME = %s\n",oldfilename);
-	   send(clientsocket,responseRNFR,sizeof(responseRNFR),0 );	  	 
+	   memcpy(oldfilename,buff+5,MAX_SIZE_STRING);
+	  // printf("OLDFILENAME = %s\n",oldfilename);	
+	  SendResponse("350 Chose file to rename success.");*/
+	  
 	}
 
-		if(!strcmp(command, "RNTO"))
+		if(!strcmp(commandChar, "RNTO"))
 	{
-	   printf("RNTO\n");
+	  /* printf("RNTO\n");
 	   memset(newfilename, '\0',MAX_SIZE_STRING);
-	   memcpy(newfilename,recvbuf+5,MAX_SIZE_STRING);
+	   memcpy(newfilename,buff+5,MAX_SIZE_STRING);
 	   int i;
 	   for(i=0;oldfilename[i]!='\n';i++)
 	  {}
@@ -313,67 +326,74 @@ int bytes = 0;
 	   {  
 		   perror("fail file rename:");           
 	   }
-	   //printf("NEWFILENAME  = %s\n",recvbuf+5);
-	   send(clientsocket,responseRNTO,sizeof(responseRNTO),0);	  	 
+	   //printf("NEWFILENAME  = %s\n",recvbuf+5);	  
+	   SendResponse("350 Rename file success.");*/
+	  
 	}
-			if(!strcmp(command, "PASV"))
+			if(!strcmp(commandChar, "PASV"))
 	{
-		/*printf("PASV %d\n",index);
+		printf("PASV %d\n",number);	
+		DestroyDataConnection();		
+		a_DataSocket = new DataSocket(this, -1);
+
+		if (!a_DataSocket->Create())
+			{
+				DestroyDataConnection();	
+				SendResponse("421 Failed to create socket.");				
+			}
+		else
+		{
+
+		}
+
+
 	  // WaitForSingleObject(mutexPASV,INFINITE);
 	 
-	   send(clientsocket,responsePASV,sizeof(responsePASV),0 );
-	     
+	  /* send(clientsocket,responsePASV,sizeof(responsePASV),0 );
+	   "227 Entering Passive Mode (172,20,10,5,0,20)." 
        getaddrinfo(NULL, DEFAULT_DATA_PORT, &hints, &result);
          if ( iResult != 0 ) 
-        printf("data connection getaddrinfo failed with error: %d\n %d", iResult,index);
+        printf("data connection getaddrinfo failed with error: %d\n %d", iResult,number);
    
     ListenDataPasvSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (ListenDataPasvSocket == INVALID_SOCKET) {
-        printf("data connection socket failed with error: %ld\n %d", WSAGetLastError(),index);          
+        printf("data connection socket failed with error: %ld\n %d", WSAGetLastError(),number);          
     }   
     bind(ListenDataPasvSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
-        printf("data connection bind failed with error: %d %d\n", WSAGetLastError(),index);        
+        printf("data connection bind failed with error: %d %d\n", WSAGetLastError(),number);        
     }
    
 
     listen(ListenDataPasvSocket, SOMAXCONN);
     if (iResult == SOCKET_ERROR) {
-        printf("data connection listen failed with error: %d\n %d", WSAGetLastError(),index);      
+        printf("data connection listen failed with error: %d\n %d", WSAGetLastError(),number);      
     }	
 	
-	printf("do data connection accept success %d\n",index);
+	printf("do data connection accept success %d\n",number);
     DataPasvSocket = accept(ListenDataPasvSocket, NULL, NULL);
     if (DataPasvSocket == INVALID_SOCKET) {
-        printf("data connection accept failed with error: %d %d\n", WSAGetLastError(),index);      
+        printf("data connection accept failed with error: %d %d\n", WSAGetLastError(),number);      
     }
-	printf("data connection accept success %d\n",index);*/
+	printf("data connection accept success %d\n",number);*/
 	
 	}
-			if(!strcmp(command, "LIST"))
+			if(!strcmp(commandChar, "LIST"))
     {	
-	printf("LIST %d\n",index);
-	send(clientsocket,responseLIST1,sizeof(responseLIST1),0 );	
-	vector <string> list = this->server->m_UserManager.GetDirectoryList();
+	printf("LIST %d\n",number);	
+	SendResponse("150 Here comes the directory listing.");
+	vector <string> list = this->server->m_UserManager.GetDirectoryList(currentDirectory);
 	if (!CreateDataConnection(0,list))
 	{
 	  DestroyDataConnection();
 	}	
 	 
+	} 
+      if(!strcmp(commandChar, "NOOP"))
+    {
+		SendResponse("200 OK");
 	}
-    } while (iRecv > 0);
-	  cout << "THREAD IS BREAKING " << index <<  endl;
-	  // shutdown(DataPasvSocket,SD_SEND);
-	  //closesocket(DataPasvSocket);	
-	  //closesocket(ListenDataPasvSocket);
-	  //ReleaseMutex(mutexPASV);
-	  //shutdown(DataPortSocket,SD_SEND);
-	  //closesocket(DataPortSocket);
-	  shutdown(clientsocket,SD_SEND);
-	  closesocket(clientsocket);
-   }
-
-
+}
 
    BOOL ConnectSocket::CreateDataConnection(int nTransferType,vector <string> list)
 {
@@ -395,7 +415,7 @@ int bytes = 0;
 				}
 			}
             a_DataSocket->OnSend();
-			//DestroyDataConnection();
+			DestroyDataConnection();
 
 
 			/*switch(nTransferType)
@@ -437,6 +457,5 @@ int bytes = 0;
 	a_DataSocket = NULL;
 	RemoteHost = "";
 	RemotePort = -1;
-	RestartOffset = 0;
 	PassiveMode = FALSE;
 }

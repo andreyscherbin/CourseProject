@@ -34,19 +34,36 @@ bool DataSocket ::Create()
 }
 bool DataSocket ::Connect(string RemoteHost,int RemotePort)
 {
-	cout << RemoteHost << " " << RemotePort << endl;
-	struct sockaddr_in anAddr;
-    anAddr.sin_family = AF_INET;
-    anAddr.sin_port = htons (RemotePort);
-	anAddr.sin_addr.S_un.S_addr = inet_addr(RemoteHost.c_str());
-    if((connect(DATASOCKET, (struct sockaddr *)&anAddr, sizeof(struct sockaddr))) == SOCKET_ERROR)
+	struct sockaddr_in my_addr, my_addr1; 
+    my_addr.sin_family = AF_INET;
+    my_addr.sin_port = htons (RemotePort);
+	my_addr.sin_addr.S_un.S_addr = inet_addr(RemoteHost.c_str());
+
+	my_addr1.sin_family = AF_INET; 
+    my_addr1.sin_addr.s_addr = INADDR_ANY; 
+    my_addr1.sin_port = htons(DEFAULT_DATA_PORT);         // binding socket to 20 port 
+
+	if (bind(DATASOCKET, (struct sockaddr*) &my_addr1, sizeof(struct sockaddr_in)) == 0) 
+        printf("Binded Correctly to 20 PORT\n"); 
+    else
+        printf("Unable to bind 20 PORT\n");
+
+    if((connect(DATASOCKET, (struct sockaddr *)&my_addr, sizeof(struct sockaddr))) == SOCKET_ERROR)
 	{
-		printf("CONNECT DATASOCKET ERROR\n");
+		printf("Error in Connection\n");
 		return false;
 	}
 	else
 	{
-	return true;
+	  struct sockaddr_in sin;
+      socklen_t len = sizeof(sin);
+      if (getsockname(DATASOCKET, (struct sockaddr *)&sin, &len) == -1){
+           perror("getsockname");
+	  }
+         else{
+          printf("server data port %d\n", ntohs(sin.sin_port));
+		 }
+	  return true;
 	}
 }
 
@@ -71,8 +88,8 @@ void DataSocket::OnSend()
 			{
 			send(DATASOCKET,listData[i].c_str(),strlen(listData[i].c_str()),0);
 			}
-			OnClose();
-			send(this->m_ConnectSocket->clientsocket,"226 The directory listing send OK.",sizeof("226 The directory listing send OK."),0 );	  
+			OnClose();			
+			this->m_ConnectSocket->SendResponse("226 The directory listing send OK.");
 	        
 	        //closesocket(DATASOCKET);
 		}break;
@@ -97,7 +114,10 @@ void DataSocket::OnSend()
 		for(i= 0; i < num_blks; i++) { 
 			fread (buffer,sizeof(char),MAXLINE,fp);			
 			if((send(DATASOCKET,buffer,MAXLINE, 0)) == SOCKET_ERROR)
-				printf("SOCKET_ERROR\n");
+			{
+				printf("DATA SOCKET_ERROR\n");
+				break;
+			}
 		}
 		sprintf(char_num_last_blk,"%d",num_last_blk);	
 		if (num_last_blk > 0) { 

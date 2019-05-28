@@ -17,7 +17,9 @@ public:
 
 	ftpserver* Server;
 	SOCKET CLIENTSOCKET;
-	SOCKET LISTENSOCKET; 	
+	SOCKET LISTENSOCKET; 
+
+	
 
 	bool OnAccept();
 };

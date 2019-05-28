@@ -18,10 +18,12 @@ using namespace std;
 #pragma comment (lib, "Ws2_32.lib")
 #pragma once
 #define DEFAULT_BUFLEN 512
+#define COMMAND_BUFLEN 5
 #define DEFAULT_COMMAND_PORT "21"
-#define DEFAULT_DATA_PORT "20"
+#define DEFAULT_DATA_PORT 20
 #define MAXLINE 4096
 #define MAX_SIZE_STRING 200
+#define BUFFERSIZE 4096
 
 
 

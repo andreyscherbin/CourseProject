@@ -19,6 +19,15 @@
 	FilesUploaded = 0;
 	FailedDownloads = 0;
 	FailedUploads = 0;
+
+	m_UserManager.workWithFile(true);
+
+	cout << endl;
+	for(int i =0;i<3;i++){
+		cout << m_UserManager.UserArray[i].Name << endl;
+		cout << m_UserManager.UserArray[i].Password << endl;
+		cout << m_UserManager.UserArray[i].strDir << endl;
+	}
 	
    }
 

@@ -13,20 +13,14 @@ class ConnectThread
 public:
 	ftpserver* Server;	
 	ConnectSocket a_ConnectSocket;
-
 	DWORD threadID;
     HANDLE thread;
-
 	ConnectThread(void);
 	~ConnectThread(void);
-
 	int ReceivedBytes;
 	int SentBytes;
-
 	void IncReceivedBytes(int nBytes);
 	void IncSentBytes(int nBytes);
-
-	void UpdateStatistic(int nType);
-	
+	void UpdateStatistic(int nType);	
 };
 

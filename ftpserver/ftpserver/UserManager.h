@@ -8,33 +8,6 @@
 #define FTP_CREATE_DIR	5
 #define FTP_LIST		6
 
-
-class Directory 
-{
-public:
-
-	Directory();
-	Directory(string,string);
-	virtual ~Directory();
-
-public:
-	//virtual void Serialize(CArchive&);
-	Directory (const Directory &dir);				// copy-constructor
-	Directory &operator=(const Directory &dir);	// =-operator
-
-    string  strDir;
-	string  strAlias;
-	BOOL    AllowDownload;
-	BOOL    AllowUpload;
-	BOOL    AllowRename;
-	BOOL    AllowDelete;
-	BOOL    AllowCreateDirectory;
-	BOOL    IsHomeDir; 
-};
-
-
-
-
 class User
 {
 public:
@@ -44,16 +17,20 @@ public:
 	virtual ~User();
 
 public:
-	//virtual void Serialize(CArchive&);
-	User (const User &user);				// copy-constructor
-	User &operator=(User &user);	// =-operator
+	
+	User (const User &user);				
+	User &operator=(User &user);	
 
 	string Name;
 	string Password;
-
-	vector <Directory> DirectoryArray;
-
-	BOOL AccountDisabled;
+	string  strDir;
+	BOOL    AllowDownload;
+	BOOL    AllowUpload;
+	BOOL    AllowRename;
+	BOOL    AllowDelete;
+	BOOL    AllowCreateDirectory;
+	BOOL    IsHomeDir;
+	BOOL  AnonymousMode;
 };
 
 
@@ -67,16 +44,16 @@ public:
 	
 	vector<User> UserArray;
 
-	char currentDirectory[MAX_SIZE_STRING]; 
+	//char currentDirectory[MAX_SIZE_STRING]; 
 
-	
-	BOOL GetUser(LPCTSTR lpszUser, User &user);
+	BOOL workWithFile(bool mode);
+	BOOL GetUser(string nameUser, User &user);
 	//BOOL ConvertPathToLocal(LPCTSTR lpszUser, string &strDirectoryIn, string &strDirectoryOut);
 	//int CheckDirectory(LPCTSTR lpszUser, string dirname, string strCurrentdir, int nOption, string &strResult);
-	 int CheckFileName(char* nameFile,char* result);
-	 int ChangeDirectory(char* currentDirectory,char* wayToCWD);
+	 int CheckFileName(string namefile,char* result,char* currentDirectory);
+	 int ChangeDirectory(char* currentDirectory,string waytocwd);
 	 int ChangeDirectoryCDUP(char* currentDirectory);
-	 vector <string> GetDirectoryList(); //LPCTSTR lpszUser, LPCTSTR lpszDirectory, string &strResult
+	 vector <string> GetDirectoryList(char * currentDirectory); //LPCTSTR lpszUser, LPCTSTR lpszDirectory, string &strResult
 	//BOOL FileExists(LPCTSTR lpszFileName, BOOL bIsDirCheck = TRUE);
 public:
 	//BOOL CheckAccessRights(LPCTSTR lpszUser, LPCTSTR lpszDirectory, int nOption);
