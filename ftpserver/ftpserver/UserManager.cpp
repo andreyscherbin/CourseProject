@@ -23,9 +23,7 @@ User::User(const User &user)
 	Name = user.Name;
 	Password = user.Password;
 	AnonymousMode = user.AnonymousMode;
-	strDir = user.strDir;
-	/*for (int i=0; i < user.DirectoryArray.size(); i++)
-		DirectoryArray.push_back(user.DirectoryArray[i]);*/
+	strDir = user.strDir;	
 }
 
 User& User::operator=( User &user)
@@ -34,17 +32,16 @@ User& User::operator=( User &user)
 	{
 		Name = user.Name;
 		Password = user.Password;
-		AnonymousMode = user.AnonymousMode;		
+		AnonymousMode = user.AnonymousMode;
+		strDir = user.strDir;
 	}
 	return *this;
 }
 
 
 UserManager::UserManager()
-{
-	
-	Filename += "./UsersInfo.txt";
-	
+{	
+	Filename += "./UsersInfo.txt";	
 }
 
 BOOL UserManager::workWithFile(bool mode)
@@ -58,8 +55,7 @@ BOOL UserManager::workWithFile(bool mode)
   {
     while ( getline (myfile,line) )
     {
-		if(line == ""){
-			cout <<"empty" << endl;
+		if(line == ""){			
 			continue;
 		}
     switch(i)
@@ -97,54 +93,40 @@ BOOL UserManager::GetUser(string nameUser, User &user)
 {
 	nameUser.pop_back();
 	nameUser.pop_back();
-
-	//m_CriticalSection.Lock();
+	
 	for (int i=0; i<UserArray.size(); i++)
 	{		
 		if (UserArray[i].Name == nameUser)                          
 		{
-			user = UserArray[i];
-			//m_CriticalSection.Unlock();
+			user = UserArray[i];			
 			return TRUE;
 		}
-	}
-	//m_CriticalSection.Unlock();
+	}	
 	return FALSE;
 }
 
 void UserManager::UpdateUserList(vector<User>&array)
-{
-	//m_CriticalSection.Lock();
+{	
 	UserArray.clear();
 	for (int i=0; i<array.size();i++)
 	{
 		UserArray.push_back(array[i]);
-	}
-	//m_CriticalSection.Unlock();
-	//Serialize(TRUE);
+	}	
 }
 
 void UserManager::GetUserList(vector<User>&array)
-{
-	//m_CriticalSection.Lock();
+{	
 	for (int i=0; i<UserArray.size();i++)
 	{
 		array.push_back(UserArray[i]);
 	}
-	//m_CriticalSection.Unlock();
+	
 }
 
-vector <string> UserManager::GetDirectoryList(char *currentDirectory) //LPCTSTR lpszUser, LPCTSTR lpszDirectory, string &strResult
+vector <string> UserManager::GetDirectoryList(string &currentDirectory) 
 {
 	
-	vector <string> resultList;
-
-	/*User user;
-	if (!GetUser(lpszUser, user))
-	{
-		// user not found -> no permissions
-		return resultList;
-	}*/
+	vector <string> resultList;	
 	char fileInfo[MAXLINE];
 	char fileAttributes[MAXLINE];
 	char fileSize[MAXLINE];
@@ -164,7 +146,7 @@ vector <string> UserManager::GetDirectoryList(char *currentDirectory) //LPCTSTR 
 	memset(fileTime, '\0',MAXLINE);	
 	memset(currentDir, '\0',MAXLINE);	
 	WIN32_FIND_DATA fd; 
-	strcpy(currentDir,currentDirectory);
+	strcpy(currentDir,currentDirectory.c_str());
 	strcat(currentDir,"/*.*");
     HANDLE hFind = FindFirstFile(currentDir, &fd); 
     if(hFind != INVALID_HANDLE_VALUE) { 
@@ -209,7 +191,7 @@ vector <string> UserManager::GetDirectoryList(char *currentDirectory) //LPCTSTR 
 	return resultList;
 }
 
- int UserManager::ChangeDirectory(char* currentDirectory,string waytocwd)
+ int UserManager::ChangeDirectory(string &currentDirectory,string waytocwd)
  {
 	  int i = 0;
 	  char wayToCWD[MAX_SIZE_STRING];	
@@ -218,53 +200,48 @@ vector <string> UserManager::GetDirectoryList(char *currentDirectory) //LPCTSTR 
 	  {
 		  wayToCWD[i] = waytocwd[i];		  
 	  }
-	  wayToCWD[i-1] = 0;
-	  cout << currentDirectory << " " <<  wayToCWD << endl;
+	  wayToCWD[i-1] = 0;	
 	  if(wayToCWD[1] != ':')
-	  {
-	  strcat(currentDirectory,"\\");
-	  strcat(currentDirectory,wayToCWD);	  
-	  cout << currentDirectory << endl;
-	  
+	  {	 
+	  currentDirectory+="\\";
+	  currentDirectory+=wayToCWD;	
 	  return 1;
 	  }
 	  else
-	  {
-      memset(currentDirectory, '\0',MAX_SIZE_STRING);
-	  memcpy(currentDirectory,wayToCWD,MAX_SIZE_STRING);
-	  cout << currentDirectory << endl;	 
+	  {    
+	  currentDirectory = "";
+      currentDirectory = wayToCWD; 
 	  return 1;
 	  }
     
  }
 
- int UserManager::ChangeDirectoryCDUP(char* currentDirectory)
- {	  
-		 int i;
-		 char symbol;
-		 for(i=strlen(currentDirectory);i>=0;i--)
-		 {
-           symbol=currentDirectory[i];
-		   if(symbol==92 || currentDirectory[i-1] == ':')  // asci code '\'
+ int UserManager::ChangeDirectoryCDUP(string &currentDirectory)
+ {		 
+		 int i = 0;
+		 char symbol;		
+		 for(i=strlen(currentDirectory.c_str())-1;i>=0;i--)
+		 {			  
+           symbol=currentDirectory[i];		  
+		   if(symbol==92 || currentDirectory[i-1] == ':') 
 		   {			 
 			 break;
-		   }
-		 }
+		   }		  
+		 }		
      if(symbol != ':' && currentDirectory[i-1] != ':' )
-	 {
-	 memset(currentDirectory+i,'\0',strlen(currentDirectory));	 
+	 {	
+	 currentDirectory = currentDirectory.substr(0,i);
+	
 	 }
 	 if(currentDirectory[i-1] == ':')
-	 {
-      memset(currentDirectory+i,'\0',strlen(currentDirectory));
-	  strcat(currentDirectory,"\\");	
-	 } 	 
-
-	  return 1;
-    
+	 {     
+	  currentDirectory = currentDirectory.substr(0,i);
+	  currentDirectory+="\\";	 
+	 } 	
+	  return 1;    
  }
 
- int UserManager::CheckFileName(string namefile,char* result,char *currentDirectory)
+ int UserManager::CheckFileName(string namefile,char* result,string &currentDirectory)
  {
 	   char downloadfilename[DEFAULT_BUFLEN]="\\";
 	   char copydownloadfilename[DEFAULT_BUFLEN]="\\";
@@ -278,7 +255,7 @@ vector <string> UserManager::GetDirectoryList(char *currentDirectory) //LPCTSTR 
 	   {}
 	   downloadfilename[i-1]='\0';  
        FILE*fp;	   
-	   strcpy(copycurrentDirectory,currentDirectory);
+	   strcpy(copycurrentDirectory,currentDirectory.c_str());
 	   strcat(copydownloadfilename,downloadfilename);
 	   strcat(copycurrentDirectory,copydownloadfilename);	  
 	   if ((fp = fopen(copycurrentDirectory, "rb"))==NULL) {
@@ -294,6 +271,50 @@ vector <string> UserManager::GetDirectoryList(char *currentDirectory) //LPCTSTR 
 		return 1;
 	   }
  }
+
+ BOOL UserManager::DeleteFile(string namefile)
+ {
+	  if(remove(namefile.c_str()))
+	  {    
+	    return FALSE;	 
+	  } 
+	  else 
+		  return TRUE;	 
+ }
+
+  BOOL UserManager::DeleteDirectory(string nameDirectory)
+ {
+	  int result;
+      result = rmdir(nameDirectory.c_str());
+        if (result == 0)
+            return TRUE;
+        else
+           FALSE;	 
+ }
+
+   BOOL UserManager::CreateDirectory(string nameDirectory)
+ {
+	  int result;
+      result = mkdir(nameDirectory.c_str());
+        if (result == 0)
+            return TRUE;
+        else
+           FALSE;	 
+ }
+
+ BOOL UserManager::Rename(string oldName,string newName)
+ { 	 
+	 if (rename(oldName.c_str(),newName.c_str()) == 0 )
+	   {	  
+		   return TRUE;
+	   }
+       else
+	   {  
+		   perror("fail file rename:"); 
+		   return FALSE;
+	   };	 
+ }
+
 
 
 

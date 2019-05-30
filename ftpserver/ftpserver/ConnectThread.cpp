@@ -1,43 +1,43 @@
-#include "ConnectThread.h"
+п»ї#include "ConnectThread.h"
 
-struct parametr_for_thread{
-    ConnectThread thread;
-	int numberThread;
-	
-	parametr_for_thread(ConnectThread thread,int numberThread){
-        this->thread = thread;   
-		this->numberThread = numberThread;
-    }
-};
-
-
-ConnectThread::ConnectThread(void)
+ConnectThread::ConnectThread(int number)
 {
 	ReceivedBytes = 0;
-	SentBytes = 0;	
+	SentBytes = 0;
+	thread = 0;
+	threadID = 0;		
+	numberThread = number;
+	
 }
-
 
 ConnectThread::~ConnectThread(void)
 {
 }
 
-DWORD WINAPI InitInstance(LPVOID pParam)
+
+DWORD WINAPI ConnectThread::StartThread(LPVOID pParam)
 {
-	parametr_for_thread* Param=(parametr_for_thread*)pParam; 
-	ConnectThread thread = Param->thread;
-	printf("start thread %d socket = %d",Param->numberThread,Param->thread.a_ConnectSocket.clientsocket);
-	thread.a_ConnectSocket.server = thread.Server;	
-	thread.a_ConnectSocket.a_Thread = &thread;
-	string str = thread.Server->GetWelcomeMessage();
+	
+	ConnectThread *pThread = static_cast<ConnectThread*>(pParam);		
+	pThread->a_ConnectSocket.server = pThread->Server;
+	pThread->a_ConnectSocket.a_Thread = pThread;
+	string str = pThread->Server->GetWelcomeMessage();
 	str+="\r\n";
-	send(Param->thread.a_ConnectSocket.clientsocket,str.c_str(),str.size(),0); // вернуть из сервака приглос
-	thread.a_ConnectSocket.OnReceive(Param->numberThread);
-	return 0;
+	printf("(%06d) %s - %s (%s) > %s",pThread->numberThread,currentDateTime().c_str(),pThread->a_ConnectSocket.getLoggedon().c_str(),pThread->a_ConnectSocket.getRemoteHost().c_str(),str.c_str());
+	send(pThread->a_ConnectSocket.clientsocket,str.c_str(),str.size(),0); 
+	pThread->a_ConnectSocket.OnReceive(1);	
+	return 0;	
+	
 }
 
-DWORD WINAPI ExitInstance(LPVOID pParam)
-{  
+bool ConnectThread::ExitThread()
+{	
+	HANDLE ThreadExitEvent=  CreateEvent(NULL,TRUE,FALSE,"ThreadExitEvent"); 
+	HANDLE ThreadExitSemaphore = CreateSemaphore(NULL,1,1,"ThreadExitSemaphore");
+	WaitForSingleObject(ThreadExitSemaphore,INFINITE);
+	this->Server->setNumberExitThread(this);
+	SetEvent(ThreadExitEvent);
+	CloseHandle(ThreadExitSemaphore);	
 	return 0;
 }
 

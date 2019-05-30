@@ -3,9 +3,6 @@
 #pragma once
 #include "library.h"
 
-
-
-
 class ftpserver;
 class ListenSocket
 {
@@ -17,9 +14,7 @@ public:
 
 	ftpserver* Server;
 	SOCKET CLIENTSOCKET;
-	SOCKET LISTENSOCKET; 
-
-	
+	SOCKET LISTENSOCKET; 	
 
 	bool OnAccept();
 };

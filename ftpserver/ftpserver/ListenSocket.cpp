@@ -1,20 +1,6 @@
 #include "ListenSocket.h"
 #include "ConnectThread.h"
 
-struct parametr_for_thread{
-    ConnectThread thread;
-	int numberThread;
-	
-	parametr_for_thread(ConnectThread thread,int numberThread){
-        this->thread = thread;   
-		this->numberThread = numberThread;
-    }
-};
-
- int number = 0;
-
-
-
 ListenSocket::ListenSocket(void)
 {
 	 CLIENTSOCKET = INVALID_SOCKET;
@@ -78,15 +64,18 @@ bool ListenSocket::OnAccept()
         return false;
     } 
 	else
-	{  
-		ConnectThread pThread;
-
-		pThread.Server = this->Server;
-		pThread.a_ConnectSocket.clientsocket = this->CLIENTSOCKET;
-		number++;
-		parametr_for_thread* Param=new parametr_for_thread(pThread,number);                            // не забудь сделать освобождение памяти
-		
-	    pThread.thread =  CreateThread(NULL,0,InitInstance,(LPVOID)Param,0,&pThread.threadID);		
+	{ 
+		this->Server->incNumClients();
+		ConnectThread *pThread = new ConnectThread(this->Server->getNumClients());
+		if (!pThread)
+	{	
+		delete pThread;	
+		return false;
+	}		
+		pThread->Server = this->Server;		
+		pThread->a_ConnectSocket.clientsocket = this->CLIENTSOCKET;	
+		pThread->thread =  CreateThread(NULL,0,ConnectThread::StartThread,pThread,0,&(pThread->threadID));		
+		this->Server->ThreadList.push_front(pThread);		
 	}
   return true;
 }

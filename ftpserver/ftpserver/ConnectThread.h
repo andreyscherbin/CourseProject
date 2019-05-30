@@ -3,10 +3,6 @@
 #include "ftpserver.h"
 #include "ConnectSocket.h"
 
-
-DWORD WINAPI InitInstance(LPVOID pParam);
-DWORD WINAPI ExitInstance(LPVOID pParam);
-
 class ftpserver;
 class ConnectThread
 {
@@ -14,13 +10,18 @@ public:
 	ftpserver* Server;	
 	ConnectSocket a_ConnectSocket;
 	DWORD threadID;
-    HANDLE thread;
-	ConnectThread(void);
-	~ConnectThread(void);
+    HANDLE thread;	
+	int numberThread;
+
+	ConnectThread(int number);
+	~ConnectThread(void);	
 	int ReceivedBytes;
 	int SentBytes;
 	void IncReceivedBytes(int nBytes);
 	void IncSentBytes(int nBytes);
-	void UpdateStatistic(int nType);	
+	void UpdateStatistic(int nType);
+
+	static DWORD WINAPI StartThread(LPVOID pParam);
+	bool ExitThread();
 };
 

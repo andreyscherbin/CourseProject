@@ -2,36 +2,38 @@
 #include "library.h"
 class ConnectSocket;
 
-#define MODE_IDLE	4
-#define MODE_LIST	0
-#define MODE_SEND	1
-#define MODE_RECEIVE 2
-#define MODE_ERROR	3
+#define MODE_IDLE	0
+#define MODE_LIST	1
+#define MODE_SEND	2
+#define MODE_RECEIVE 3
+#define MODE_ERROR	4
 
 class DataSocket
 {
 public:
 	DataSocket(ConnectSocket *pSocket, int nTransferType = 0);	
 	~DataSocket(void);
-	bool Create();
-	bool Connect(string RemoteHost,int RemotePort);
-
 	SOCKET DATASOCKET; 
+	SOCKET LISTENSOCKET;
+
 public:
 	void SetData(vector <string>);
-	void OnSend();
-	void OnClose();
+	void SetTransferType(int nType, BOOL bWaitForAccept = FALSE);
+	void Send();
+	void Receive();
+	void Close();
+	void Listen();
+	bool Create();
+	bool Accept();
+	bool Connect(string RemoteHost,int RemotePort);
+	void OnConnect();
+	bool getSockInfo(int&,string&);
+	int GetStatus();
 
 protected:
 	DWORD RestartOffset;
 	BOOL Connected;
-	BOOL Initialized;
-	//int Receive();
-	//BOOL PrepareReceiveFile(LPCTSTR lpszFilename);
-	//BOOL PrepareSendFile(LPCTSTR lpszFilename);
-	DWORD TotalBytesTransfered;
-	DWORD TotalBytesReceive;
-	DWORD TotalBytesSend;
+	BOOL Initialized;	
 	int TransferType;
 	vector <string> listData;
 	int Status;

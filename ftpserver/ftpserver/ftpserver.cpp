@@ -10,6 +10,7 @@
 	GoodbyeMessage = "Bye";
 	Timeout = 5;
 	Running = FALSE;
+	nclients = 0;
 	
 	ConnectionCount = 0;
 	TotalSentBytes = 0;
@@ -22,13 +23,8 @@
 
 	m_UserManager.workWithFile(true);
 
-	cout << endl;
-	for(int i =0;i<3;i++){
-		cout << m_UserManager.UserArray[i].Name << endl;
-		cout << m_UserManager.UserArray[i].Password << endl;
-		cout << m_UserManager.UserArray[i].strDir << endl;
-	}
-	
+	ThreadExitEvent=CreateEvent(NULL,TRUE,FALSE,"ThreadExitEvent");
+	ThreadExitSemaphore = CreateSemaphore(NULL,1,1,"ThreadExitSemaphore");	
    }
 
    bool ftpserver ::start()
@@ -46,8 +42,50 @@
     printf("FTP Server failed to listen on port %d.",Port);
 	return false;
 }
+   void ftpserver ::setNumberExitThread(ConnectThread *exitThread)
+   {
+	   this->exitThread = exitThread;
+   }
 
 
    ftpserver::~ftpserver(void)
    {
    }
+
+   DWORD WINAPI ftpserver::FunctionForCheckEvents(LPVOID pParam)
+{
+	ftpserver *server = static_cast<ftpserver*>(pParam);
+	while(true)
+	{
+	if(WaitForSingleObject(server->ThreadExitEvent,INFINITE) == WAIT_OBJECT_0)
+	{		
+	ConnectThread *exitThread = server->exitThread;	
+	list<ConnectThread*>::iterator findIter = find(server->ThreadList.begin(), server->ThreadList.end(),exitThread);	
+	WaitForSingleObject((*findIter)->thread,INFINITE);
+	CloseHandle((*findIter)->thread);
+	delete *findIter;
+	server->ThreadList.remove(*findIter);
+	server->decNumClients();	
+    ResetEvent(server->ThreadExitEvent);
+	ReleaseSemaphore(server->ThreadExitSemaphore,1,NULL);
+	}
+	}
+	return 0;	
+	
+}
+   void ftpserver ::incNumClients()
+   {	  
+	   this->nclients++;	 
+   }
+
+     void ftpserver ::decNumClients()
+   {	  
+	   this->nclients--;
+   }
+
+   int ftpserver::getNumClients()
+   {	   
+	   return nclients;
+   }
+
+

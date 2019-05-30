@@ -1,11 +1,11 @@
 andrey
 11111
-C:/usb
+C:\
 
 petya
 22222
-C:/apk
+C:\Program Files
 
 kolya
 33333
-D:/
+D:\

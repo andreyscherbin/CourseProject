@@ -8,6 +8,7 @@ int  main()
 	printf("FTP SERVER \n");
     ftpserver server;	
     server.start();
+	server.ThreadForCheckEvents =  CreateThread(NULL,0,ftpserver::FunctionForCheckEvents,&server,0,&(server.ThreadForCheckEventsID));
 
 	while(true)
 	{
@@ -15,11 +16,7 @@ int  main()
 		{
            WSACleanup();
 		   break;
-		}
-
-		else
-			printf("\nNEW CONNECT\n");
-			
+		}			
 	}	
 	printf("Server ended\n");
 	getch();	
