@@ -12,7 +12,7 @@ ConnectSocket::ConnectSocket(void)
 	RemoteHost = "";
 	RemotePort = -1;	
 	PassiveMode = FALSE;
-	clientsocket = INVALID_SOCKET;	
+	CLIENTSOCKET = INVALID_SOCKET;	
 }
 
 
@@ -23,8 +23,8 @@ ConnectSocket::~ConnectSocket(void)
 
 void ConnectSocket::OnClose() 
 { 
-	shutdown(clientsocket,SD_SEND);
-	closesocket(clientsocket);
+	shutdown(CLIENTSOCKET,SD_SEND);
+	closesocket(CLIENTSOCKET);
 }
 
 void ConnectSocket::OnReceive(int numberThread)   
@@ -32,7 +32,7 @@ void ConnectSocket::OnReceive(int numberThread)
 	char buff[DEFAULT_BUFLEN];
 	while(true)
 	{
-	int nRead = recv(clientsocket, buff, DEFAULT_BUFLEN, 0);
+	int nRead = recv(CLIENTSOCKET, buff, DEFAULT_BUFLEN, 0);
 
 	switch (nRead)
 	{
@@ -71,7 +71,7 @@ BOOL ConnectSocket::SendResponse(char* responseChar)
 {
 	string responseString = string(responseChar);
 	responseString+="\r\n";
-	int nBytes = send(clientsocket,responseString.c_str(),responseString.size(),0);
+	int nBytes = send(CLIENTSOCKET,responseString.c_str(),responseString.size(),0);
 
 	if (nBytes == SOCKET_ERROR)
 	{
@@ -111,7 +111,7 @@ string ConnectSocket::getRemoteHost()
 {
 	sockaddr_in SockAddr;
 	int addrlen= sizeof(SockAddr);
-	getpeername(this->clientsocket,(LPSOCKADDR)&SockAddr,&addrlen);		
+	getpeername(this->CLIENTSOCKET,(LPSOCKADDR)&SockAddr,&addrlen);		
 	char ipstr[16];
 	strcpy(ipstr,inet_ntoa(SockAddr.sin_addr));	
 	return ipstr;

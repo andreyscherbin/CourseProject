@@ -18,7 +18,7 @@ class ConnectSocket
 
 public:
 	DataSocket *a_DataSocket;
-	SOCKET clientsocket;
+	SOCKET CLIENTSOCKET;
 	int PassiveMode;
 	int RemotePort;
 	string RemoteHost;
@@ -36,7 +36,7 @@ public:
 public:
 	ConnectSocket(void);
 	 ~ConnectSocket(void);
-	 BOOL CreateDataConnection(int nTransferType,vector <string>);
+	 BOOL CreateDataConnection(int nTransferType,vector <string> result);
 	void DestroyDataConnection();
 	BOOL getArgsFromCommand(string &command, string &args);
 	ftpserver * server;
@@ -51,7 +51,7 @@ public:
 	void OnClose();	
 	void OnReceive(int numberThread);
 
-protected:	
+public:	
 	void ParseCommand(string,int);
 	
 	string command;	

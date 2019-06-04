@@ -73,7 +73,7 @@ bool ListenSocket::OnAccept()
 		return false;
 	}		
 		pThread->Server = this->Server;		
-		pThread->a_ConnectSocket.clientsocket = this->CLIENTSOCKET;	
+		pThread->a_ConnectSocket.CLIENTSOCKET = this->CLIENTSOCKET;	
 		pThread->thread =  CreateThread(NULL,0,ConnectThread::StartThread,pThread,0,&(pThread->threadID));		
 		this->Server->ThreadList.push_front(pThread);		
 	}

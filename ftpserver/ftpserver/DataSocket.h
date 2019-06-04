@@ -17,7 +17,7 @@ public:
 	SOCKET LISTENSOCKET;
 
 public:
-	void SetData(vector <string>);
+	void SetData(vector <string> listString);
 	void SetTransferType(int nType, BOOL bWaitForAccept = FALSE);
 	void Send();
 	void Receive();
@@ -27,7 +27,7 @@ public:
 	bool Accept();
 	bool Connect(string RemoteHost,int RemotePort);
 	void OnConnect();
-	bool getSockInfo(int&,string&);
+	bool getSockInfo(int& socket,string& resultAdress);
 	int GetStatus();
 
 protected:
